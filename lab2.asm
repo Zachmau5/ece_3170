@@ -1,33 +1,25 @@
-$include (c8051f020.inc) ; Include the C8051F020 definitions
+$include(C8051F020.inc)
 
-ORG 0000h ; Start of program
+cseg at 0
+mov wdtcn, #0DEH					;Clear watchdog
+mov wdtcn, #0ADH	
+mov xbr2, #40H						;Enable Port Output
 
-; Initialization
-mov wdtcn, #0DEh ; disable watchdog
-mov wdtcn, #0ADh
-mov xbr2, #40h ; enable port output
+mov A, #0FFH							;Filling Accum w/1's
+mov P1, A									
 
-; Configure ports
-mov P1MDIN, #0xFF ; Set P1 as input
-mov P2MDIN, #0xFF ; Set P2 as input
-mov P3MDOUT, #0xFF ; Set P3 as output
-mov P4MDOUT, #0xFF ; Set P4 as output
+setb P2.6   							;declare as Input
+setb P2.7									;declare as Input 
 
-MAIN_LOOP:
-; Read state of pushbuttons
-mov A, P1 ; Load pushbutton states into accumulator
-; Invert the bits since a pushbutton press is active low
-cpl A
-; Reflect state on the first two LEDs
-mov P3, A ; Only P3.0 and P3.1 are affected
 
-; Read state of DIP switches
-mov A, P2 ; Load DIP switch states into accumulator
-; Invert the bits since a DIP switch ON is active low
-cpl A
-; Reflect state on the eight LEDs
-mov P4, A ; Reflect on P4.0 to P4.7
+loop:		mov P3, P1				;DIP -> LED 3-10
 
-SJMP MAIN_LOOP ; Loop back to start
+				mov C, P2.6				;Button 1 -> Carry Flag
+				mov P2.0, C				;Carry Flag -> LED 1
 
-END ; End of program
+				mov C, P2.7				;Button2 -> Carry Flag
+				mov P2.1,C				;Carry Flag -> LED 2
+				
+				jmp loop					;Always run
+				
+				END								;All true code ends with "END"
