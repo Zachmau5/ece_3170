@@ -13,6 +13,7 @@ setb P2.7                   ; Declare P2.7 as input (right button)
 start:
     call initialize_state   ; Initialize the state
     call display            ; Display the initial LED state
+
 main_loop:
     call delay_15ms         ; Call delay routine for debouncing
     call check_buttons      ; Check button states
@@ -67,6 +68,7 @@ flash_loop:
 ; Initialization Routine
 initialize_state:
     mov position, #5        ; Set position for the first of the center LEDs (LED5)
+    mov old_buttons, #0     ; Initialize old_buttons to 0
     ret
 
 ; Display Routine
@@ -134,5 +136,10 @@ loop2_200ms:
     djnz R2, loop1_200ms
     djnz R4, outer_loop    ; Repeat the entire delay loop
     ret
+
+; Data Segment
+dseg at 30h                 ; Start of the data segment
+position:      ds 1         ; Allocate 1 byte for position
+old_buttons:   ds 1         ; Allocate 1 byte for storing the previous state of buttons
 
 end                         ; End of the program
