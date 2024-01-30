@@ -82,7 +82,6 @@ display:
     inc A
     call disp_led           ; Display the next LED
     ret
-
 ; LED Control Logic
 disp_led:
     ; Special handling for LEDs 1 and 2
@@ -99,9 +98,11 @@ not_led2:
     mov B, #80H             ; Load B with binary 10000000
     mov R4, A               ; Move adjusted position to R4 for shifting
     jz disp_finish          ; If position is 0 (LED3), skip shifting
+    ; Shift loop begins
 shift_loop:
     rr B                    ; Rotate right through carry
     djnz R4, shift_loop     ; Repeat shift for the number of times in R4
+    ; Shift loop ends
 disp_finish:
     orl P3, B               ; Set the corresponding bit in P3
     ret
