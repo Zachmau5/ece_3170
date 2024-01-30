@@ -95,16 +95,14 @@ not_led1:
 not_led2:
     ; Handling for LEDs 3 to 10
     dec A                   ; Adjust position for zero-based index
-    mov B, #80H             ; Load B with binary 10000000
-    mov R4, A               ; Move adjusted position to R4 for shifting
+    mov R4, A               ; Move adjusted position to R4
+    mov A, #80H             ; Load A with binary 10000000
     jz disp_finish          ; If position is 0 (LED3), skip shifting
-    ; Shift loop begins
 shift_loop:
-    rr B                    ; Rotate right through carry
+    rr A                    ; Rotate right through carry
     djnz R4, shift_loop     ; Repeat shift for the number of times in R4
-    ; Shift loop ends
 disp_finish:
-    orl P3, B               ; Set the corresponding bit in P3
+    orl P3, A               ; Set the corresponding bit in P3
     ret
 
 ; Button Check and Debounce Routine
