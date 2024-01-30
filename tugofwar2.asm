@@ -25,8 +25,9 @@ main_loop:
 
     ; Only left button logic
     jnb ACC.6, check_right  ; Jump if left button not pressed
-    cjne position, #1, move_left ; Check if not at left extreme
-    jmp game_over            ; If at left extreme, go to game over
+    mov A, position         ; Move position value to accumulator
+    cjne A, #1, move_left   ; Compare with 1 and jump if not equal
+    jmp game_over           ; If equal (at left extreme), go to game over
 
 move_left:
     dec position            ; Move left
@@ -35,11 +36,12 @@ move_left:
 check_right:
     ; Only right button logic
     jnb ACC.7, update_display ; Jump if right button not pressed
-    cjne position, #8, move_right ; Check if not at right extreme
-    jmp game_over            ; If at right extreme, go to game over
+    mov A, position           ; Move position value to accumulator
+    cjne A, #8, move_right    ; Compare with 8 and jump if not equal
+    jmp game_over             ; If equal (at right extreme), go to game over
 
 move_right:
-    inc position            ; Move right
+    inc position              ; Move right
     jmp update_display
 
 both_pressed:
