@@ -129,3 +129,22 @@ DELAY_INNER_LOOP:
     RET
 
 END
+
+
+
+Game_over:
+    mov R7, #5            ; Set the flash count
+flash_loop:
+    orl P3, #0FFh         ; Turn on all LEDs on P3
+    orl P2, #03h          ; Turn on all LEDs on P2
+    LCALL delay_200ms     ; Delay
+    anl P3, #00h          ; Turn off all LEDs on P3
+    anl P2, #00h          ; Turn off all LEDs on P2
+    LCALL delay_200ms     ; Delay
+    djnz R7, flash_loop   ; Repeat flash
+
+    ; Reset the game state
+    LCALL initialize_state; Reset to initial state
+    LCALL Display         ; Update display
+    LJMP MainLoop         ; Go back to the main loop
+
