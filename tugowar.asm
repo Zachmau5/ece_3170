@@ -14,7 +14,7 @@ mov wdtcn, #0ADh
 mov xbr2, #40h              ; enable port output
 setb P2.7                   ; Input button (right)
 setb P2.6                   ; Input button (left)
-mov Position, #04h	        ; Starting position (middle LEDs)
+mov Position, #03h          ; Starting position for P3.2 (LED3)
 
 ; Initialize and Display LEDs
 LCALL Display
@@ -66,19 +66,57 @@ Check_buttons:
 
 ; ------------- Display ------------
 Display:
-    ORL P3, #0FFh
-    ORL P2, #03h
+    ORL P3, #0FFh           ; Turn off all LEDs on P3
+    ORL P2, #03h            ; Turn off all LEDs on P2
     MOV A, Position
     LCALL DISP_LED
-    INC A
+    INC A                   ; Increment to next position (LED4)
     LCALL DISP_LED
     RET
 
 ; ------------- Display LED's ----------------
 DISP_LED:
-    ; ... [include your LED control logic here, similar to the given DISP_LED routine] ...
-    ; This routine will turn on the LED corresponding to the value in the accumulator
-    ; ...
+    CJNE A, #1, not_led1
+    CLR P3.0                ; Turn on LED1
+    RET
+not_led1:
+    CJNE A, #2, not_led2
+    CLR P3.1                ; Turn on LED2
+    RET
+not_led2:
+    CJNE A, #3, not_led3
+    CLR P3.2                ; Turn on LED3 (initially on)
+    RET
+not_led3:
+    CJNE A, #4, not_led4
+    CLR P3.3                ; Turn on LED4 (initially on)
+    RET
+not_led4:
+    CJNE A, #5, not_led5
+    CLR P3.4                ; Turn on LED5
+    RET
+not_led5:
+    CJNE A, #6, not_led6
+    CLR P3.5                ; Turn on LED6
+    RET
+not_led6:
+    CJNE A, #7, not_led7
+    CLR P3.6                ; Turn on LED7
+    RET
+not_led7:
+    CJNE A, #8, not_led8
+    CLR P3.7                ; Turn on LED8
+    RET
+not_led8:
+    CJNE A, #9, not_led9
+    CLR P2.0                ; Turn on LED9
+    RET
+not_led9:
+    CJNE A, #10, DISP_END
+    CLR P2.1                ; Turn on LED10
+    RET
+DISP_END:
+    RET
 
 ; -------------Time Delay = 20 ms------------
 DELAY:
