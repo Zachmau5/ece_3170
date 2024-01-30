@@ -1,111 +1,93 @@
-$include (C8051F020.inc)    ; Include the microcontroller-specific file
+$include (c8051f020.inc) 
 
-cseg at 0                   ; Code segment begins
+; Data Segment for variables
+dseg at 20h
+Position:  ds 1
+old_button: ds 1
+
+; Code Segment
+cseg
 
 ; Initialization
-mov wdtcn, #0DEH            ; Clear watchdog
-mov wdtcn, #0ADH
-mov xbr2, #40H              ; Enable Port Output
-setb P2.6                   ; Declare P2.6 as input (left button)
-setb P2.7                   ; Declare P2.7 as input (right button)
+mov wdtcn, #0DEh            ; disable watchdog
+mov wdtcn, #0ADh
+mov xbr2, #40h              ; enable port output
+setb P2.7                   ; Input button (right)
+setb P2.6                   ; Input button (left)
+mov Position, #04h	        ; Starting position (middle LEDs)
 
-; Main Program Start
-start:
-    call initialize_state   ; Initialize the state
-    call display            ; Display the initial LED state
+; Initialize and Display LEDs
+LCALL Display
 
-main_loop:
-    call delay_15ms         ; Call delay routine for debouncing
-    call check_buttons      ; Check button states
+; Main Game Loop
+MainLoop:
+    LCALL DELAY             ; Delay for debouncing
+    LCALL Check_buttons     ; Check button states
+    ANL A, #11000000b       ; Mask to isolate button inputs
+    CJNE A, #90h, LEFT      ; Check if both buttons are pressed
+    SJMP MainLoop
 
-    ; Check if both buttons are pressed
-    mov A, old_buttons
-    jb ACC.6, both_pressed  ; If left button is pressed, check right button
-    jb ACC.7, both_pressed  ; If right button is pressed, check left button
+LEFT:
+    CJNE A, #80h, RIGHT     ; Check if only left button was pressed
+    INC Position
+    LCALL Display
+    LJMP Game_over
 
-    ; Only left button logic
-    jnb ACC.6, check_right  ; Jump if left button not pressed
-    cjne position, #1, move_left ; Check if not at left extreme
-    jmp update_display
+RIGHT:
+    CJNE A, #40h, NONE      ; Check if only right button was pressed
+    DEC Position
+    LCALL Display
+    LJMP Game_over
 
-move_left:
-    dec position            ; Move left
-    jmp update_display
+NONE:
+    SJMP MainLoop           ; Continue if no button was pressed
 
-check_right:
-    ; Only right button logic
-    jnb ACC.7, update_display ; Jump if right button not pressed
-    cjne position, #8, move_right ; Check if not at right extreme
-    jmp update_display
+Game_over:
+    MOV A, Position
+    CJNE A, #00H, NINE      ; Check if position is at the left extreme
+    SJMP OVER               ; End the game
+NINE:
+    MOV A, Position
+    CJNE A, #08H, MainLoop  ; Check if position is at the right extreme
+    SJMP OVER               ; End the game
 
-move_right:
-    inc position            ; Move right
-    jmp update_display
+OVER:
+    SJMP OVER               ; Endless loop to signify game over
 
-both_pressed:
-    ; Do nothing if both buttons are pressed
-    jmp update_display
+; Subroutines
+; ------------- Checks the Buttons ------------
+Check_buttons:
+    MOV A, P2
+    CPL A                   ; Complement inputs since active low
+    XCH A, old_button       ; Exchange new and old button states
+    XRL A, old_button       ; XOR to find changed states
+    ANL A, old_button       ; AND to filter out only pressed states
+    RET
 
-update_display:
-    call display            ; Update LED display
-    jmp main_loop           ; Repeat loop
+; ------------- Display ------------
+Display:
+    ORL P3, #0FFh
+    ORL P2, #03h
+    MOV A, Position
+    LCALL DISP_LED
+    INC A
+    LCALL DISP_LED
+    RET
 
-; Initialization Routine
-initialize_state:
-    mov position, #5        ; Set position for the first of the center LEDs (LED5)
-    ret
+; ------------- Display LED's ----------------
+DISP_LED:
+    ; ... [include your LED control logic here, similar to the given DISP_LED routine] ...
+    ; This routine will turn on the LED corresponding to the value in the accumulator
+    ; ...
 
-; Display Routine
-display:
-    orl P3, #0FFH           ; Turn off all LEDs on P3
-    orl P2, #03H            ; Turn off LEDs on P2.0 and P2.1
-    mov A, position
-    call disp_led           ; Display LED for the current position
-    inc A
-    call disp_led           ; Display the next LED
-    ret
+; -------------Time Delay = 20 ms------------
+DELAY:
+    MOV R2, #67             ; Outer loop count
+DELAY_OUTER_LOOP:
+    MOV R3, #200            ; Inner loop count
+DELAY_INNER_LOOP:
+    DJNZ R3, DELAY_INNER_LOOP
+    DJNZ R2, DELAY_OUTER_LOOP
+    RET
 
-; LED Control Logic
-disp_led:
-    ; Special handling for LEDs 1 and 2
-    cjne A, #1, not_led1
-    clr P2.0                ; Turn on LED1
-    ret
-not_led1:
-    cjne A, #2, not_led2
-    clr P2.1                ; Turn on LED2
-    ret
-not_led2:
-    ; Handling for LEDs 3 to 10
-    dec A                   ; Adjust position for zero-based index
-    mov B, #80H             ; Load B with binary 10000000
-    mov R4, A               ; Move adjusted position to R4 for shifting
-    jz disp_finish          ; If position is 0 (LED3), skip shifting
-shift_loop:
-    rr B                    ; Rotate right through carry
-    djnz R4, shift_loop     ; Repeat shift for the number of times in R4
-disp_finish:
-    orl P3, B               ; Set the corresponding bit in P3
-    ret
-
-; Button Check and Debounce Routine
-check_buttons:
-    mov A, P2
-    cpl A                   ; Complement to make buttons active-high
-    XCH A, old_buttons
-    XRL A, old_buttons      ; XOR to find changed states
-    ANL A, old_buttons      ; AND to filter out only pressed states
-    mov old_buttons, A      ; Update old_buttons
-    ret
-
-; Delay Routine (approximately 15ms)
-delay_15ms:
-    mov R2, #50
-loop1:
-    mov R3, #200
-loop2:
-    djnz R3, loop2
-    djnz R2, loop1
-    ret
-
-end                         ; End of the program
+END
