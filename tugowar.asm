@@ -14,7 +14,7 @@ mov wdtcn, #0ADh
 mov xbr2, #40h              ; enable port output
 setb P2.7                   ; Input button (right)
 setb P2.6                   ; Input button (left)
-mov Position, #05h          ; Starting position for P3.5 (LED3)
+mov Position, #5          ; Starting position for P3.5 (LED3)
 
 ; Initialize and Display LEDs
 LCALL Display
@@ -44,11 +44,11 @@ NONE:
 
 Game_over:
     MOV A, Position
-    CJNE A, #0AH, NINE      ; Check if position is at the left extreme
+    CJNE A, #09H, NINE      ; Check if position is at the left extreme
     SJMP OVER               ; End the game
 NINE:
     MOV A, Position
-    CJNE A, #00H, MainLoop  ; Check if position is at the right extreme
+    CJNE A, #01, MainLoop  ; Check if position is at the right extreme
     SJMP OVER               ; End the game
 
 OVER:
