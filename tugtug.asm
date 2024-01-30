@@ -129,3 +129,37 @@ DELAY_INNER_LOOP:
     RET
 
 END
+
+
+
+; ... [previous code remains the same] ...
+
+Game_over:
+    MOV A, Position
+    CJNE A, #09H, CHECK_RIGHT  ; Check if position is at the left extreme (LED9)
+    LCALL Light_1_to_5          ; Light up LEDs 1-5
+    SJMP OVER                   ; End the game
+
+CHECK_RIGHT:
+    CJNE A, #01H, MainLoop      ; Check if position is at the right extreme (LED1)
+    LCALL Light_6_to_10         ; Light up LEDs 6-10
+    SJMP OVER                   ; End the game
+
+OVER:
+    SJMP OVER                   ; Endless loop to signify game over
+
+; ... [existing subroutines] ...
+
+; Subroutine to light up LEDs 1-5
+Light_1_to_5:
+    ORL P3, #0FFh              ; Turn off all LEDs on P3
+    ANL P2, #0F8h              ; Turn on LEDs 1-5 on P2
+    RET
+
+; Subroutine to light up LEDs 6-10
+Light_6_to_10:
+    ORL P2, #03h               ; Turn off all LEDs on P2
+    ANL P3, #0E0h              ; Turn on LEDs 6-10 on P3
+    RET
+
+; ... [rest of your code] ...
