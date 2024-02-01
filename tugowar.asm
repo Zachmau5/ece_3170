@@ -154,8 +154,7 @@ Light_1_to_5:
 ; New Subroutine to light up LEDs 6-10
 ; Light_6_to_10 - Lights up LEDs 6 to 10 on P3 when the game ends on the right side.
 Light_6_to_10:
-    ;ORL P2, #0FFh
-		ANL P2, #0FCh             ; Turn off all LEDs on P2
+    ANL P2, #0FCh            ; Turn off all LEDs on P2
     ANL P3, #0F8h            ; Turn on LEDs 6-10 on P3
     RET
 
