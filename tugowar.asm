@@ -1,4 +1,4 @@
-$include (c8051f020.inc) 
+$include (c8051f020.inc)
 
 ; Data Segment for variables
 dseg at 20h
@@ -14,7 +14,7 @@ mov wdtcn, #0ADh
 mov xbr2, #40h              ; enable port output
 setb P2.7                   ; Input button (right)
 setb P2.6                   ; Input button (left)
-mov Position, #5          ; Starting position for P3.5 (LED3)
+mov Position, #5            ; Starting position for P3.5 (LED3)
 
 ; Initialize and Display LEDs
 LCALL Display
@@ -42,20 +42,26 @@ RIGHT:
 NONE:
     SJMP MainLoop           ; Continue if no button was pressed
 
+; Modified Game_over logic
 Game_over:
     MOV A, Position
-    CJNE A, #09H, NINE      ; Check if position is at the left extreme
-    SJMP OVER               ; End the game
-NINE:
-    MOV A, Position
-    CJNE A, #01, MainLoop  ; Check if position is at the right extreme
-    SJMP OVER               ; End the game
+    CJNE A, #09H, CHECK_RIGHT  ; Check if position is at the left extreme (LED9)
+    LCALL Light_1_to_5         ; Light up LEDs 1-5
+    SJMP OVER                  ; End the game
+
+CHECK_RIGHT:
+    CJNE A, #01H, MainLoop     ; Check if position is at the right extreme (LED1)
+    LCALL Light_6_to_10        ; Light up LEDs 6-10
+    SJMP OVER                  ; End the game
 
 OVER:
-    SJMP OVER               ; Endless loop to signify game over
+    SJMP OVER                  ; Endless loop to signify game over
 
 ; Subroutines
 ; ------------- Checks the Buttons ------------
+; Check_buttons - Processes the state of the buttons. It complements the input from P2,
+; compares it with the previous state, and determines if any button was pressed.
+
 Check_buttons:
     MOV A, P2
     CPL A                   ; Complement inputs since active low
@@ -65,6 +71,9 @@ Check_buttons:
     RET
 
 ; ------------- Display ------------
+; Display - Manages the display of LEDs based on the current position.
+; It turns off all LEDs and then calls DISP_LED to display the correct LED.
+
 Display:
     ORL P3, #0FFh           ; Turn off all LEDs on P3
     ORL P2, #03h            ; Turn off all LEDs on P2
@@ -75,43 +84,47 @@ Display:
     RET
 
 ; ------------- Display LED's ----------------
+; DISP_LED - Controls which LED to turn on based on the accumulator's value.
+; It checks the value and turns on the specific LED in either P2 or P3.
+
 DISP_LED:
-    CJNE A, #1, not_led1
+    ; Check if the LED to be controlled is within P2 range (LEDs 1-2)
+    CJNE A, #1, CHECK_LED2
     CLR P2.0                ; Turn on LED1
     RET
-not_led1:
-    CJNE A, #2, not_led2
+CHECK_LED2:
+    CJNE A, #2, CHECK_LED3
     CLR P2.1                ; Turn on LED2
     RET
-not_led2:
-    CJNE A, #3, not_led3
-    CLR P3.0                ; Turn on LED3 (initially on)
+CHECK_LED3:
+    CJNE A, #3, CHECK_LED4
+    CLR P3.0                ; Turn on LED3
     RET
-not_led3:
-    CJNE A, #4, not_led4
-    CLR P3.1                ; Turn on LED4 (initially on)
+CHECK_LED4:
+    CJNE A, #4, CHECK_LED5
+    CLR P3.1                ; Turn on LED4
     RET
-not_led4:
-    CJNE A, #5, not_led5
+CHECK_LED5:
+    CJNE A, #5, CHECK_LED6
     CLR P3.2                ; Turn on LED5
     RET
-not_led5:
-    CJNE A, #6, not_led6
+CHECK_LED6:
+    CJNE A, #6, CHECK_LED7
     CLR P3.3                ; Turn on LED6
     RET
-not_led6:
-    CJNE A, #7, not_led7
+CHECK_LED7:
+    CJNE A, #7, CHECK_LED8
     CLR P3.4                ; Turn on LED7
     RET
-not_led7:
-    CJNE A, #8, not_led8
+CHECK_LED8:
+    CJNE A, #8, CHECK_LED9
     CLR P3.5                ; Turn on LED8
     RET
-not_led8:
-    CJNE A, #9, not_led9
+CHECK_LED9:
+    CJNE A, #9, CHECK_LED10
     CLR P3.6                ; Turn on LED9
     RET
-not_led9:
+CHECK_LED10:
     CJNE A, #10, DISP_END
     CLR P3.7                ; Turn on LED10
     RET
@@ -119,6 +132,8 @@ DISP_END:
     RET
 
 ; -------------Time Delay = 20 ms------------
+; DELAY - Creates a fixed delay using nested loops, used for debouncing the button inputs.
+
 DELAY:
     MOV R2, #67             ; Outer loop count
 DELAY_OUTER_LOOP:
@@ -128,23 +143,20 @@ DELAY_INNER_LOOP:
     DJNZ R2, DELAY_OUTER_LOOP
     RET
 
+; New Subroutine to light up LEDs 1-5
+; Light_1_to_5 - Lights up LEDs 1 to 5 on P2 when the game ends on the left side.
+
+Light_1_to_5:
+    ORL P3, #0FFh						; Turn off all LEDs on P3
+    ANL P3, #07h						; Turn on LEDs 1-5 on P2
+    RET
+
+; New Subroutine to light up LEDs 6-10
+; Light_6_to_10 - Lights up LEDs 6 to 10 on P3 when the game ends on the right side.
+Light_6_to_10:
+    ;ORL P2, #0FFh
+		ANL P2, #0FCh             ; Turn off all LEDs on P2
+    ANL P3, #0F8h            ; Turn on LEDs 6-10 on P3
+    RET
+
 END
-
-
-
-Game_over:
-    mov R7, #5            ; Set the flash count
-flash_loop:
-    orl P3, #0FFh         ; Turn on all LEDs on P3
-    orl P2, #03h          ; Turn on all LEDs on P2
-    LCALL delay_200ms     ; Delay
-    anl P3, #00h          ; Turn off all LEDs on P3
-    anl P2, #00h          ; Turn off all LEDs on P2
-    LCALL delay_200ms     ; Delay
-    djnz R7, flash_loop   ; Repeat flash
-
-    ; Reset the game state
-    LCALL initialize_state; Reset to initial state
-    LCALL Display         ; Update display
-    LJMP MainLoop         ; Go back to the main loop
-
