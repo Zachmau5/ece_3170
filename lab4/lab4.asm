@@ -28,12 +28,28 @@ cseg
 ; LEDs are initialized to an off state to ensure a known startup condition.
 ; Initial carriage return and line feed are sent over serial to indicate the program has started and is ready to operate.
 
-mov wdtcn, #0DEh            ; disable watchdog
-mov wdtcn, #0ADh
-mov xbr2, #40h              ; enable port output
+ORG 0
+mov wdtcn,#0DEh 	; disable watchdog
+mov wdtcn,#0ADh
+mov xbr2,#40h	    ; enable port output
+mov xbr0,#04h	    ; enable uart 0
+mov oscxcn,#67H	    ; turn on external crystal
+mov tmod,#20H	    ; wait 1ms using T1 mode 2
+mov th1,#256-167	; 2MHz clock, 167 counts = 1ms
+setb tr1
 
-ORG 0000H
-    LJMP MAIN
+wait1:
+	jnb tf1,wait1
+	clr tr1		    ; 1ms has elapsed, stop timer
+	clr tf1
+wait2:
+	mov a,oscxcn	; now wait for crystal to stabilize
+	jnb acc.7,wait2
+	mov oscicn,#8	; engage! Now using 22.1184MHz
+
+	mov scon0,#50H	; 8-bit, variable baud, receive enable
+	mov th1,#-6	    ; 9600 baud
+	setb tr1	    ; start baud clock
 
 ; Start of code memory for messages, 256 in decimal.
 ;placed away from all initial instructions
@@ -51,33 +67,24 @@ MSG_TABLE:
     DB "My reply is no", 0DH, 0AH, '$'
 
 START:
-    ; System clock initialization for external oscillator
-    ; Watchdog Timer Disabled, External Oscillator Enabled
-    ; Switch to external oscillator source
-    ; Serial port setup for 9600 baud, 8N1
-    MOV TMOD, #20H ; Timer 1 in mode 2, auto-reload for baud rate generator
-    MOV TH1, #0xFD ; 9600 baud with 22.1184 MHz oscillator
-    MOV SCON0, #50H ; Mode 1, 8-bit UART, enable receiver
-    SETB TR1 ; Start Timer 1
 
     ; Initialize LEDs to be off
     MOV P1, #0x00 ; Assuming LEDs are connected to P1
-
-    ; Send initial carriage return and line feed
-    MOV SBUF0, #0x0D
-    CALL Wait_Tx
-    MOV SBUF0, #0x0A
-    CALL Wait_Tx
 
     ; Initialize variables
     MOV random, #1
     MOV old_button, #0FFH ; Assume all buttons unpressed initially
     MOV debounce_counter, #0
 
-MAIN_LOOP:
+
+cycle:
     CALL delay_10ms
     CALL Check_Buttons
-    SJMP MAIN_LOOP
+    JNB RI0, cycle    ; wait for data to arrive on UART
+    CLR RI0		    ; clear flag for next time
+    MOV A, SBUF0	    ; get the incoming data...
+    MOV SBUF0, A	    ; ...and send it back
+    SJMP cycle
 
 
 ;------10ms DELAY SUBROUTINE--------
