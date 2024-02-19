@@ -5,127 +5,221 @@
 ;       Use two buttons and a 10 LED bar to simulate playing ping pong
 ;       players will use the buttons as paddels and try to return the ball to
 ;       the other side.
-; VERSION 1.0 - initialized project based of tug of war
+; VERSION 4.3 - initialized project based of tug of war
 
 $include (c8051f020.inc)
 
-; Data Segment for variables
-dseg at 20h
-Position:  ds 1           ; Position of the ball
-Direction: ds 1           ; Direction of the ball, 1 for right (initially)
-old_button: ds 1          ; Previous state of the buttons
+dseg at 30h
+    old_buttons: ds 1
+    position: ds 1
+    direction: ds 1
+    status: ds 1
 
-; Code Segment
 cseg
-
-; Initialization
-org 0h
-START:
-    mov SP, #7Fh           ; Initialize stack pointer
-    mov wdtcn, #0DEh       ; Disable watchdog timer
+    mov wdtcn, #0DEh     ; disable watchdog
     mov wdtcn, #0ADh
-    mov xbr2, #40h         ; Enable crossbar and weak pull-ups
-    mov p2mdout, #0FCh     ; Set P2.0 and P2.1 as push-pull output for LEDs 1 and 2
-    mov p3mdout, #0FFh     ; Set P3 as push-pull output for LEDs 3 to 10
-    mov Position, #5       ; Start with the first LED for scrolling effect
-    mov Direction, #1      ; Direction is not used in this simple scroll but kept for possible future use
+    mov xbr2, #40h       ; enable port output
+    mov A, R3
+    cpl A
+    mov R3, A
+    acall start_pos     ; Initializes the position to the center LEDs
+    mov status, #0
+    mov old_buttons, #00h   ; Sets the saved data of the buttons to zero
+    mov direction, #1       ; Sets the direction to the right (R=0, L=1)
 
-; Main Game Loop
-MainLoop:
-    LCALL Check_buttons    ; Check button states to start scrolling
-    LCALL Move_Ball        ; Move the ball based on button press
-    LCALL Display          ; Update the LED display based on the ball's position
-    LCALL DELAY            ; Delay for debouncing and speed control
-    SJMP MainLoop
+begin:
+    acall delay        ; Delay to prevent mechanical bouncing
+    acall check_buttons     ; Check if either button or both are pressed
+    acall disp_led      ; Check location of the first LED and display it
+    mov A, status
+    cjne A, #0, loop     ; Leave start loop if left button is pressed
+    jmp begin
 
-; Check Buttons Subroutine
-Check_buttons:
-    MOV A, P2
-    ANL A, #0C0h           ; Isolate the button states (P2.7 and P2.6)
-    MOV B, A
-    CPL B                  ; Complement since buttons are active low
-    MOV A, Position
-    CJNE A, #2, Check_Right_Button
-    JNB B.6, Left_Button   ; If left button (P2.6) is pressed in buffer zone
-Check_Right_Button:
-    CJNE A, #9, No_Button_Pressed
-    JNB B.7, Right_Button  ; If right button (P2.7) is pressed in buffer zone
-    SJMP No_Button_Pressed
-Left_Button:
-    ; If the ball is in the left buffer zone, reverse direction
-    CJNE Position, #2, RET
-    CLR Direction          ; Change direction to left
-    SJMP No_Button_Pressed
-Right_Button:
-    ; If the ball is in the right buffer zone, reverse direction
-    CJNE Position, #9, RET
-    SETB Direction         ; Change direction to right
-No_Button_Pressed:
-    RET
+loop:
+    mov P3, #0FFh      ; Clear previous LEDs
+    orl P2, #03h
+    acall check_buttons      ; Check if either button or both are pressed
+    acall move_ball       ; Call the subroutine to move the ball
+    jmp loop
 
-; Move Ball Subroutine (Adjusted for win condition beyond visible LEDs)
-Move_Ball:
-    MOV A, Direction
-    CJNE A, #0, Move_Right
-    DEC Position
-    CJNE Position, #0FFh, Update_Display  ; Allows decrementing past 1 for game over condition
-    SJMP Game_Over_Right_Wins
-    RET
-Move_Right:
-    INC Position
-    CJNE Position, #11, Update_Display    ; Allows incrementing past 10 for game over condition
-    SJMP Game_Over_Left_Wins
-    RET
-Update_Display:
-    LCALL Display
-    RET
+move_ball:
+    mov A, direction       ; Pull the direction of move_ball into the accumulator
+    jnz move_ball_left       ; If the accumulator is zero move_ball right
+    dec position      ; Move to the right
+    acall win_state_check
+    acall disp_led     ; Check location of the first LED and display it
+    acall move_delay_def   ; How fast will we go?
+    ret
 
-; Display Subroutine
-Display:
-    MOV A, Position
-    MOV B, #1
-    MOV C, A
-    CJNE A, #1, CHECK_LED2
-    MOV P2, #0FDh           ; Turn on LED 1 on P2
-    SJMP Display_End
-CHECK_LED2:
-    CJNE A, #2, CHECK_LED3_10
-    MOV P2, #0FBh           ; Turn on LED 2 on P2
-    SJMP Display_End
-CHECK_LED3_10:
-    SUBB A, #2              ; Adjust position for LEDs on P3
-    MOV P3, B
-    RLC C
-    MOV P3, C               ; Update LEDs on P3 based on position
-Display_End:
-    RET
 
-; Delay Subroutine
-DELAY:
-    MOV R2, #20             ; Outer loop for delay
-DELAY_OUTER_LOOP:
-    MOV R3, #255            ; Inner loop count for a longer delay
-DELAY_INNER_LOOP:
-    DJNZ R3, DELAY_INNER_LOOP
-    DJNZ R2, DELAY_OUTER_LOOP
-    RET
+move_ball_left:
+    inc position       ; Move position left
+    acall win_state_check
+    acall disp_led   ; Check location of the first LED and display it
+    acall move_delay_def  ; Check switches for move speed
+    ret
 
-; Game Over Subroutines
-Game_Over_Left_Wins:
-    ; Blink or set a specific pattern to indicate left side wins
-    ; Example: Light up all LEDs
-    MOV P2, #0FC ; Assuming LEDs 1 and 2 are on P2 and need to be turned off
-    MOV P3, #00  ; Turn on all LEDs on P3 to indicate win
-    SJMP $       ; Stay in this state indefinitely
+disp_led:
+    mov A, position    ; Displaying LEDs based on position.
+    cjne A, #1, check_led2
+    clr P2.0
+check_led2:
+    cjne A, #2, check_led3
+    clr P2.1
+    ret
+check_led3:
+    cjne A, #3, check_led4
+    clr P3.0
+    ret
+check_led4:
+    cjne A, #4, check_led5
+    clr P3.1
+    ret
+check_led5:
+    cjne A, #5, check_led6
+    clr P3.2
+    ret
+check_led6:
+    cjne A, #6, check_led7
+    clr P3.3
+    ret
+check_led7:
+    cjne A, #7, check_led8
+    clr P3.4
+    ret
+check_led8:
+    cjne A, #8, check_led9
+    clr P3.5
+    ret
+check_led9:
+    cjne A, #9, check_led10
+    clr P3.6
+    ret
+check_led10:
+    cjne A, #10, disp_end
+    clr P3.7
+    ret
+disp_end:
+    ret
 
-Game_Over_Right_Wins:
-    ; Blink or set a specific pattern to indicate right side wins
-    ; Example: Turn off all LEDs
-    MOV P2, #0FF ; Turn off LEDs 1 and 2 on P2
-    MOV P3, #0FF ; Turn off all LEDs on P3 to indicate win
-    SJMP $       ; Stay in this state indefinitely
+delay:
+    mov R1, #67      ; Delay approx 10ms
+loop1:
+    mov R2, #100
+loop2:
+    djnz R2, loop2
+    djnz R1, loop1
+    ret
 
-End_Game:
+move_delay:
+move_loop_1:
+    acall check_buttons   ; Sampling of buttons
+    acall delay      ; 10ms delay
+    djnz R4, move_loop_1   ; Multiple of 10ms given ball speed
+    ret
+
+check_buttons:
+    mov A, P2      
+    cpl A
+    xch A, old_buttons
+    xrl A, old_buttons
+    anl A, old_buttons
+    jb ACC.6, check_p2_window     ; Check Window Right
+    jb ACC.7, check_p1_window     ; Check Window Left
+no_switch:
+    ret
+
+move_delay_def:
+    mov A, P1          ; Load the state of P1 (DIP switches) into accumulator A
+    anl A, #060h       ; Mask out all but DIP6 (P1.5) and DIP7 (P1.6)
+    cjne A, #040h, check_dip7 ; Check if only DIP6 is ON (Slower Speed)
+    mov R4, #60 ; Slower Speed
+    sjmp apply_delay
+check_dip7:
+    cjne A, #020h, default_speed ; Check if only DIP7 is ON (Faster Speed)
+    mov R4, #10 ; Faster Speed
+    sjmp apply_delay
+default_speed:
+    mov R4, #25 ; Set R4 for default speed delay
+apply_delay:
+    acall move_delay     ; Call the generic delay function with R4 set
+    ret
+
+check_p2_window:
+    mov A, position
+    cjne A, #3, p2_window_sub1    ; If position is not at 3, jump to medium window
+    jnb P1.2, no_switch    ; Are we in easy?
+    jmp swap_direction_left
+    ret
+
+p2_window_sub1:
+    mov A, position
+    cjne A, #2, p2_window_sub2   ; If position is not at 2, then move on
+    jnb P1.3, no_switch    ; Are we in medium?
+    jmp swap_direction_left
+    ret
+
+p2_window_sub2:
+    mov A, position
+    cjne A, #1, no_switch  ; If position is not at 1, then move on
+    jmp swap_direction_left
+    ret
+
+check_p1_window:
+    mov A, position
+    cjne A, #8, p1_window_sub1    ; If position is not at 8, then move on
+    jnb P1.0, no_switch    ; Are we in easy?
+    jmp swap_direction_right
+    ret
+
+p1_window_sub1:
+    mov A, position
+    cjne A, #9, p1_window_sub2   ; If position is not at 9, then move on
+    jnb P1.1, no_switch    ; Are we in medium?
+    jmp swap_direction_right
+    ret
+
+p1_window_sub2:
+    mov A, position      ; If position is not at 10, then move on
+    cjne A, #0Ah, no_switch
+    jmp swap_direction_right
+    ret
+
+swap_direction_left:
+    mov direction, #1    ; Swap direction variable
+    mov status, #1   ; Starting move direction
+    ret
+
+swap_direction_right:
+    mov direction, #0    ; Swap direction variable
+    mov status, #1   ; Start move direction
+    ret
+
+start_pos:
+    cjne R3, #00h, p2_start
+    mov position, #0Ah
+    ret
+p2_start:
+    mov position, #01h
+    ret
+
+win_state_check:
+    mov R6, position    ; Has either side won?
+    cjne R6, #00h, p1_winning
+    mov position, #1
+    jmp win
+p1_winning:
+    cjne R6, #0Bh, mid_game
+    mov position, #10
+    jmp win
+mid_game:
+    ret
+
+win:
+    acall disp_led
+    jmp win
+    end
+
     SJMP End_Game           ; Loop indefinitely once the game is over
 
 END START
