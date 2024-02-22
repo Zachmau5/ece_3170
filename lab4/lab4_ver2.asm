@@ -6,6 +6,15 @@
 ;
 ; VERSION 1.0: Initial Submit - Issues with error fixing unresolved by deadline.
 ; VERSION 2.0: Changed implementation from a lookup table approach.
+;Version 2.1	Fixed to actually call my push buttons
+; File Header
+; - Magic 8 Ball
+; - Random number generator from 1-8.
+; - Zachary Hallett - zacharyhallett@mail.weber.edu
+;	- Andrew Coffel		- andrewchoffel@mail.weber.edu
+;
+; VERSION 1.0: Initial Submit - Issues with error fixing unresolved by deadline.
+; VERSION 2.0: Changed implementation from a lookup table approach.
 
 $include (c8051f020.inc) ; Include the microcontroller specific header.
 
@@ -17,17 +26,7 @@ old_button:
         DS 1
 
 CSEG ; Code Segment.
-	message_1:  db      "It is certain", 0
-	message_2:  db      "You may rely on it", 0
-	message_3:  db      "Without a doubt", 0
-	message_4:  db      "Yes", 0
-	message_5:  db      "Most likely", 0
-	message_6:  db      "Reply hazy, try again", 0
-	message_7:  db      "Concentrate and ask again", 0
-	message_8:  db      "Don't count on it", 0
-	message_9:  db      "Very doubtful", 0
-	message_10: db      "My reply is no", 0
-	carriage_return:   db      0DH, 0AH, 0
+
 ; Initial setup of the microcontroller.
 setup:
         MOV     wdtcn, #0DEh    ; Disable the watchdog timer.
@@ -62,20 +61,23 @@ send_carriage_return:
 handle_button_press:
         CALL    delay_10ms
         DJNZ    random, continue
-        MOV     random,#6      ; Reset random number within range
+        MOV     random,#10      ; Reset random number within range
 
 continue:
         CALL    check_buttons
-        CJNE    A, #01, NEXT		;makes sure button is actally pressed
-NEXT:   JB      SCON0.0, message_call
-        JC      handle_button_press
+        JB	Acc.6, message_call
+				JB Acc.7, message_call
+				;CJNE    A, #01, NEXT		;makes sure button is actally pressed
+
+NEXT:   JBC      RI, message_call
+        JMP      handle_button_press
 
 ; Routine to call the message associated with the LED.
 message_call:
-        CLR     SCON0.0				;clears UART transmitt interupt flag
+        ;CLR     RI				;clears UART transmitt interupt flag
         CALL    DISP_LED
         CALL    next_char
-        JMP     carriage_return
+        JMP     handle_button_press
 
 ; Send characters to the UART. reads characters from the message pointed to by data pointer. fetches EACH
 ; character, character by character, as long as fetched character is not zero.
@@ -94,32 +96,26 @@ end_send:
 ; sends character into uarts buffer reg and waits a small delay to ensure transmission.
 send_byte:
         MOV     SBUF0, A
-        CALL    delay_5ms
+        CALL    serial_delay_1
         RET
 
 ; Delay routines for serial communication timing.
+serial_delay_1:
 serial_delay:
-        JNB     tf1, serial_delay
-        CLR     tf1
+        JNB     ti, serial_delay
+        CLR     ti
         RET
 
 delay_10ms:        
-        MOV     TL0, #low(-9216)
-        MOV     TH0, #high(-9216)
+        MOV     TL0, #low(-18432)
+        MOV     TH0, #high(-18432)
         SETB    TR0
 WAIT:   JNB     TF0, WAIT
         CLR     TF0
         CLR     TR0
         RET
 
-delay_5ms:        
-        MOV     TL0, #low(-4044)
-        MOV     TH0, #high(-4044)
-        SETB    TR0
-WAIT_5: JNB     TF0, WAIT_5
-        CLR     TF0
-        CLR     TR0
-        RET
+
 
 ; Check button press status.
 check_buttons: 
@@ -180,17 +176,25 @@ CHECK_LED8:
         CLR     P3.7
         RET
 CHECK_LED9: 
-        CJNE    A, #09, not_nine
+        CJNE    A, #09,CHECK_LED10
         mov     dptr, #message_9 
         CLR     P2.0
         RET
-not_nine: 
-        CJNE    A, #10, CHECK_LED10
+CHECK_LED10: 
+        CJNE    A, #10, disp_led
         mov     dptr, #message_10
         CLR     P2.1
         RET
-CHECK_LED10: 
-        MOV     dptr, #carriage_return			;clear file register
-        RET
 
+	message_1:  db      "It is certain",0DH, 0AH, 0
+	message_2:  db      "You may rely on it",0DH, 0AH, 0
+	message_3:  db      "Without a doubt",0DH, 0AH, 0
+	message_4:  db      "Yes",0DH, 0AH, 0
+	message_5:  db      "Most likely",0DH, 0AH, 0
+	message_6:  db      "Reply hazy, try again",0DH, 0AH, 0
+	message_7:  db      "Concentrate and ask again",0DH, 0AH, 0
+	message_8:  db      "Don't count on it",0DH, 0AH, 0
+	message_9:  db      "Very doubtful",0DH, 0AH, 0
+	message_10: db      "My reply is no",0DH, 0AH, 0
+	carriage_return:   db 0DH, 0AH, 0
 END
