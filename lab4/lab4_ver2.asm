@@ -4,7 +4,7 @@
 ; - Zachary Hallett - zacharyhallett@mail.weber.edu
 ; - Andrew Coffel		- andrewchoffel@mail.weber.edu
 ;
-:VERSION 1.0: Initial Submit - Issues with error fixing unresolved by deadline.
+;VERSION 1.0: Initial Submit - Issues with error fixing unresolved by deadline.
 ;VERSION 2.0: Changed implementation from a lookup table approach.
 ;VERSION 2.1	Fixed to actually call my push buttons
 $include (c8051f020.inc) ; Include the microcontroller specific header.
