@@ -2,20 +2,11 @@
 ; - Magic 8 Ball
 ; - Random number generator from 1-8.
 ; - Zachary Hallett - zacharyhallett@mail.weber.edu
-;	- Andrew Coffel		- andrewchoffel@mail.weber.edu
+; - Andrew Coffel		- andrewchoffel@mail.weber.edu
 ;
-; VERSION 1.0: Initial Submit - Issues with error fixing unresolved by deadline.
-; VERSION 2.0: Changed implementation from a lookup table approach.
-;Version 2.1	Fixed to actually call my push buttons
-; File Header
-; - Magic 8 Ball
-; - Random number generator from 1-8.
-; - Zachary Hallett - zacharyhallett@mail.weber.edu
-;	- Andrew Coffel		- andrewchoffel@mail.weber.edu
-;
-; VERSION 1.0: Initial Submit - Issues with error fixing unresolved by deadline.
-; VERSION 2.0: Changed implementation from a lookup table approach.
-
+:VERSION 1.0: Initial Submit - Issues with error fixing unresolved by deadline.
+;VERSION 2.0: Changed implementation from a lookup table approach.
+;VERSION 2.1	Fixed to actually call my push buttons
 $include (c8051f020.inc) ; Include the microcontroller specific header.
 
 DSEG at 20h ; Data Segment starting at address 20h.
