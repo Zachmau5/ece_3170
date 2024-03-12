@@ -16,6 +16,7 @@ DSEG at 30h
 old_button:     DS 1
 count:          DS 1
 running:        DS 1    ; Use running.0 to determine the running state
+prescaler_count: DS 1  ; Add this line to define the prescaler counter
 
 CSEG
 org 0000h
@@ -40,10 +41,12 @@ main:
     MOV     xbr2, #40h      ; Enable crossbar for port output
     SETB    P2.7            ; Set P2.7 as input (reset button)
     SETB    P2.6            ; Set P2.6 as input (start/stop button)
+		MOV			prescaler_count, #10
 
     ; Timer 2 Configuration for 10Hz updates
-    mov     RCAP2H, #HIGH(-18432) ; Timer 2 reload value for 10Hz, high byte
-    mov     RCAP2L, #LOW(-18432)  ; Timer 2 reload value for 10Hz, low byte
+     mov     RCAP2H, #HIGH(-18432) ; High byte of reload value
+    mov     RCAP2L, #LOW(-18432)  ; Low byte of reload value
+
     setb    TR2                   ; Start Timer 2
     mov     IE, #10100000b         ; Enable Timer 2 and Serial interrupts
 
@@ -95,19 +98,21 @@ T2_INT:
 
     ; Check if the stopwatch is running
     MOV     A, running         ; Load 'running' into A
-    ORL     A, #0              ; Logical OR A with 0 (this operation affects the zero flag)
+    ;ORL     A, #0              ; Logical OR A with 0 (this operation affects the zero flag)
     JZ      NOT_RUNNING        ; If Z flag is set (A was 0), jump to NOT_RUNNING
 
     ; If we're here, the stopwatch is running
     ; Increment the BCD count for the stopwatch
     MOV     A, count
+		DJNZ		prescaler_count, NOT_RUNNING
+		MOV			prescaler_count, #10
     ADD     A, #1              ; Add 1 to the BCD count for tenths of seconds
     DA      A                  ; Adjust for BCD
     MOV     count, A
-    CJNE    A, #0A0h, DISPLAY_UPDATE  ; Check if we need to increment seconds
-    ANL     A, #0Fh            ; Reset tenths to 0, keep seconds unchanged
-    MOV     count, A           ; Store back the updated count
-    INC     count              ; Increment the second
+    ;CJNE    A, #0A0h, DISPLAY_UPDATE  ; Check if we need to increment seconds
+    ;ANL     A, #0Fh            ; Reset tenths to 0, keep seconds unchanged
+    ;MOV     count, A           ; Store back the updated count
+    ;INC     count              ; Increment the second
 
 DISPLAY_UPDATE:
     ; Update the display regardless of whether we've incremented the second
@@ -133,9 +138,9 @@ Check_buttons:
     MOV     running, A             ; Store back to 'running'
 NOT_START_STOP:
     JNB     B.7, NO_RESET          ; Check if reset button is pressed
-    MOV     A, #00h                ; Load 0 into A, preparing to stop the stopwatch and reset count. when =1, just starts. KEEP FOR TROUBLESHOOTING
+    MOV     A, #01h                ; Load 0 into A, preparing to stop the stopwatch and reset count. when =1, just starts. KEEP FOR TROUBLESHOOTING
     MOV     running, A             ; Stop the stopwatch by setting 'running' to 0
-    MOV     count, A               ; Reset the counter to 0
+    ;MOV     count, A               ; Reset the counter to 0
     CALL    DISP_LED               ; Update LED display immediately
 NO_RESET:
     RET
@@ -144,17 +149,18 @@ NO_RESET:
 ;------DISPLAY LED SUBROUTINE--------
 DISP_LED:
     MOV     A, count      ; Load the count into A
-    MOV     B, A          ; Store original count in B for later
-
+    ;MOV     B, A          ; Store original count in B for later
+		SWAP 		A
+		CPL 		A
     ; Extract and display tenths of seconds (lower nibble)
-    ANL     A, #00h       ; Isolate tenths (lower nibble for P3.0 to P3.3)
+    ;ANL     A, #00h       ; Isolate tenths (lower nibble for P3.0 to P3.3)
     MOV     P3, A         ; Display tenths on P3.0 to P3.3 (assuming lower nibble controls these LEDs)
 
     ; Extract and display seconds (upper nibble)
-    MOV     A, B          ; Retrieve original count
-    ORL     A, #00h      ; Isolate seconds (upper nibble)
-    SWAP    A             ; Swap to bring seconds into lower nibble
-    ORL     P3, A         ; Combine with tenths already on P3 (assuming upper nibble controls P3.4 to P3.7)
+    ;MOV     A, B          ; Retrieve original count
+    ;ORL     A, #00h      ; Isolate seconds (upper nibble)
+    ;SWAP    A             ; Swap to bring seconds into lower nibble
+    ;ORL     P3, A         ; Combine with tenths already on P3 (assuming upper nibble controls P3.4 to P3.7)
 
     RET
 END
