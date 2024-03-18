@@ -1,27 +1,37 @@
-#include <C8051F020.h>
-#include <lcd.h>
+//
+// LCD Interface
+//
+// This module initializes the 64x128 LCD module, declares a shadow memory
+// in external memory, and provides subroutines to blank the shadow memory
+// and/or copy that memory to the LCD.
+//
+//
+// initialize LCD - Call this once at the beginning of time.
+// It sets up LCD hardware, blanks the shadow memory then displays it on
+// the screen.
+//
+void init_lcd(void);
 
-void main()
-{
-   WDTCN = 0xde;  // disable watchdog
-   WDTCN = 0xad;
-   XBR2 = 0x40;   // enable port output
-   XBR0 = 4;      // enable uart 0
-   OSCXCN = 0x67; // turn on external crystal
-   TMOD = 0x20;   // wait 1ms using T1 mode 2
-   TH1 = -167;    // 2MHz clock, 167 counts - 1ms
-   TR1 = 1;
-   while ( TF1 == 0 ) { }          // wait 1ms
-   while ( !(OSCXCN & 0x80) ) { }  // wait till oscillator stable
-   OSCICN = 8;    // switch over to 22.1184MHz
-   SCON0 = 0x50;  // 8-bit, variable baud, receive enable
-   TH1 = -6;      // 9600 baud
-   for ( ; ; )
-   {
-      // wait for data to arrive
-      if ( !RI0 ) continue;
-      // clear the receiver flag & echo the data
-      RI0 = 0;
-      SBUF0 = SBUF0;
-   }
-}
+//
+// Copy shadow memory to LCD screen.
+//
+void refresh_screen(void);
+
+//
+// Clear the shadow memory.
+//
+void blank_screen(void);
+
+//
+// Shadow memory. 1024 bytes. Eight 128-byte pages. Each page corresponds
+// to 8 rows of pixels. screen[0] is upper left, screen[127] is upper right,
+// screen[1023] is lower right. Least significant bit of each byte is on the
+// top pixel row of its page.
+//
+extern xdata char screen[];
+
+//
+// Handy 5x7 font that will come in handy in later labs. Always put at least
+// a one pixel space between characters.
+//
+extern code char font5x8[];
