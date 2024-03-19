@@ -16,6 +16,7 @@ void main()
    OSCICN = 8;    // switch over to 22.1184MHz
    SCON0 = 0x50;  // 8-bit, variable baud, receive enable
    TH1 = -6;      // 9600 baud
+   init_lcd();
    for ( ; ; )
    {
       // wait for data to arrive
