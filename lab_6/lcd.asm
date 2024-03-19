@@ -5,7 +5,7 @@ public init_lcd, refresh_screen, blank_screen, screen, font5x8;
 
 $include (c8051f020.inc)
 LCD_CMD   equ 8000H ; Set this to the address of the command register
-LCD_DAT   equ 8000H ; Set this to the address of the data register
+LCD_DAT   equ 8F00H ; Set this to the address of the data register
 LCD_RESET equ 10H ; Mask that selects the reset line on P4 (e.g. for P4.4 use 10H)
 
 ;
@@ -59,7 +59,7 @@ wdat1:	movx	a,@r0		; r0 has no relevance here
 init_lcd:
 	mov	p4,#not LCD_RESET
 	mov	emi0cf,#00101001b        ; B5: P4-7, B4: multiplexed, B3-2: split bank, 01 2 sysclocks for ALE high and low
-	mov	emi0tc,#01001101b       ; pulse width 4 sysclock cycles DONE
+	mov	emi0tc,#01001100b       ; pulse width 4 sysclock cycles DONE
 	mov	p74out,#0FFH    ; push-pull
 	orl     p4,#LCD_RESET   ; assert then deassert reset
 
@@ -116,7 +116,7 @@ blank_screen:
 	mov	dptr,#0
 	mov	a,#1
 blank_loop:
-	rr A
+	rl A
 	movx	@dptr,a
 	inc	dptr
 	mov	b,dph
