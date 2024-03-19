@@ -116,7 +116,7 @@ blank_screen:
 	mov	dptr,#0
 	mov	a,#1
 blank_loop:
-	rl A
+	rr A
 	movx	@dptr,a
 	inc	dptr
 	mov	b,dph
