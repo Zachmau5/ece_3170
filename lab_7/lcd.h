@@ -1,37 +1,33 @@
-//
-// LCD Interface
-//
-// This module initializes the 64x128 LCD module, declares a shadow memory
-// in external memory, and provides subroutines to blank the shadow memory
-// and/or copy that memory to the LCD.
-//
-//
-// initialize LCD - Call this once at the beginning of time.
-// It sets up LCD hardware, blanks the shadow memory then displays it on
-// the screen.
-//
-void init_lcd(void);
+#ifndef THERMOSTAT_H  // Include guard to prevent multiple inclusions
+#define THERMOSTAT_H
 
-//
-// Copy shadow memory to LCD screen.
-//
-void refresh_screen(void);
+#include <C8051F020.h>  // Include the MCU-specific header
 
-//
-// Clear the shadow memory.
-//
-void blank_screen(void);
+// LCD Interface Functions
+void init_lcd(void);  // Initialize LCD - sets up hardware, blanks shadow memory, displays on screen
+void refresh_screen(void);  // Copy shadow memory to LCD screen
+void blank_screen(void);  // Clear the shadow memory
 
-//
-// Shadow memory. 1024 bytes. Eight 128-byte pages. Each page corresponds
-// to 8 rows of pixels. screen[0] is upper left, screen[127] is upper right,
-// screen[1023] is lower right. Least significant bit of each byte is on the
-// top pixel row of its page.
-//
-extern xdata char screen[];
+// LCD Shadow Memory
+extern xdata char screen[1024];  // 1024 bytes for 64x128 LCD module, maps bytes to screen pixels
 
-//
-// Handy 5x7 font that will come in handy in later labs. Always put at least
-// a one pixel space between characters.
-//
-extern code char font5x8[];
+// Font data
+extern code char font5x8[];  // Font data for 5x7 characters, useful for later labs
+
+// ADC and Temperature Reading Functions
+void init_adc(void);  // Initialize ADC settings for reading analog inputs
+unsigned int read_adc(unsigned char channel);  // Read ADC value from specified channel
+float convert_temp(unsigned int adc_value);  // Convert ADC value to temperature in Fahrenheit
+float read_temperature(void);  // Read and convert temperature from internal sensor
+float read_set_point_from_potentiometer(unsigned char channel);  // Read set point value from potentiometer
+
+// Display and Control Functions
+void update_display(float temperature, float set_point);  // Update LCD with temperature and set point
+void control_leds(float temperature, float set_point);  // Control LEDs based on temperature comparison
+
+// Define ADC channels for temperature sensor and potentiometers
+#define TEMP_SENSOR 0x0F  // ADC channel for the internal temperature sensor
+#define POTENTIOMETER_CHANNEL_0 0x00  // ADC channel for the first potentiometer (AIN0.0)
+#define POTENTIOMETER_CHANNEL_1 0x01  // For future use (AIN0.1)
+
+#endif // THERMOSTAT_H
