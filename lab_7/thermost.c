@@ -1,10 +1,16 @@
 #include <C8051F020.h>
 #include <lcd.h>
 
+// Include standard I/O for sprintf
+#include <stdio.h>
+
 // Define ADC channels
 #define TEMP_SENSOR 0x0F  // ADC channel for the internal temperature sensor
 #define POTENTIOMETER_CHANNEL_0 0x00  // ADC channel for the first potentiometer (AIN0.0)
 #define POTENTIOMETER_CHANNEL_1 0x01  // ADC channel for the second potentiometer (AIN0.1), for future use
+// Define strings in the external memory space
+__xdata __at(0x2100) char temperatureStr[32]; // Reserve space for temperature string
+__xdata __at(0x2120) char setpointStr[32];    // Reserve space for setpoint string
 
 void init_device() {
     WDTCN = 0xDE;  // Disable watchdog timer
@@ -27,7 +33,7 @@ void init_device() {
 
 void init_adc() {
     AMX0CF = 0x00;  // Set AMUX to single-ended input
-    ADC0CF = 0x38;  // Set ADC conversion rate (update based on your system clock)
+    ADC0CF = 0x40;  // Set ADC conversion rate (update based on your clock)
     ADC0CN = 0x80;  // Enable ADC and start conversion
     REF0CN = 0x03;  // Enable on-chip voltage reference and temperature sensor
 }
@@ -68,7 +74,7 @@ void update_display(float temperature, float set_point) {
 }
 
 void control_leds(float temperature, float set_point) {
-    // Here, we're assuming LEDs are connected to general-purpose I/O pins on Port 3.
+    // LEDs are connected to Port 3.
     if (temperature <= set_point) {
         P3 |= 0x01;  // Turn LED on (set the bit to 1)
     } else {
@@ -77,21 +83,10 @@ void control_leds(float temperature, float set_point) {
 }
 
 void main() {
-    float temperature, set_point_0, set_point_1;  // set_point_1 for future use
+    float temperature, set_point_0, set_point_1;  // set_point_1 for breakout
 
     init_device();  // Initialize the device
     init_adc();     // Initialize ADC for reading temperature and potentiometers
-
-    while (1) {
-        temperature = read_temperature();  // Read temperature from the internal sensor
-        set_point_0 = read_set
-
-
-void main() {
-    float temperature, set_point;
-
-    init_device();  // Initialize the device settings
-    init_adc();     // Initialize the ADC for temperature and potentiometer readings
 
        while (1) {
         temperature = read_temperature();  // Read temperature from the internal sensor.
