@@ -1,32 +1,109 @@
 #include <C8051F020.h>
 #include <lcd.h>
 
-void main()
-{
-   WDTCN = 0xde;  // disable watchdog
-   WDTCN = 0xad;
-   XBR2 = 0x40;   // enable port output
-   XBR0 = 4;      // enable uart 0
-   OSCXCN = 0x67; // turn on external crystal
-   TMOD = 0x20;   // wait 1ms using T1 mode 2
-   TH1 = -167;    // 2MHz clock, 167 counts - 1ms
-   TR1 = 1;
-   while ( TF1 == 0 ) { }          // wait 1ms
-   while ( !(OSCXCN & 0x80) ) { }  // wait till oscillator stable
-   OSCICN = 8;    // switch over to 22.1184MHz
-   SCON0 = 0x50;  // 8-bit, variable baud, receive enable
-   TH1 = -6;      // 9600 baud
-   init_lcd();
-   for ( ; ; )
-   {
-      // wait for data to arrive
-      if ( !RI0 ) continue;
-      // clear the receiver flag & echo the data
-      RI0 = 0;
-      SBUF0 = SBUF0;
-   }
+// Define ADC channels
+#define TEMP_SENSOR 0x0F  // ADC channel for the internal temperature sensor
+#define POTENTIOMETER_CHANNEL_0 0x00  // ADC channel for the first potentiometer (AIN0.0)
+#define POTENTIOMETER_CHANNEL_1 0x01  // ADC channel for the second potentiometer (AIN0.1), for future use
+
+void init_device() {
+    WDTCN = 0xDE;  // Disable watchdog timer
+    WDTCN = 0xAD;
+    XBR2 = 0x40;   // Enable port output
+    XBR0 = 0x04;   // Enable UART 0
+    OSCXCN = 0x67; // Start external oscillator
+    TMOD = 0x20;   // Timer 1 mode 2, auto-reload
+    TH1 = -167;    // Timer reload value for 1ms (assuming 2MHz)
+    TR1 = 1;       // Start Timer 1
+    while (!TF1);  // Wait until timer overflow
+    TF1 = 0;       // Clear overflow flag
+    while (!(OSCXCN & 0x80));  // Wait for oscillator to stabilize
+    OSCICN = 0x08; // Switch to the stabilized external oscillator
+    SCON0 = 0x50;  // Configure serial port (UART)
+    TH1 = -6;      // Baud rate for UART
+
+    init_lcd();    // Initialize LCD
 }
-//TODO
-//
-//
-//
+
+void init_adc() {
+    AMX0CF = 0x00;  // Set AMUX to single-ended input
+    ADC0CF = 0x38;  // Set ADC conversion rate (update based on your system clock)
+    ADC0CN = 0x80;  // Enable ADC and start conversion
+    REF0CN = 0x03;  // Enable on-chip voltage reference and temperature sensor
+}
+
+unsigned int read_adc(unsigned char channel) {
+    AMX0SL = channel;             // Select ADC input channel
+    ADC0CN &= ~0x20;              // Clear the “conversion completed” flag
+    ADC0CN |= 0x10;               // Start conversion
+    while (!(ADC0CN & 0x20));     // Wait for conversion to complete
+    return (ADC0L | (ADC0H << 8)); // Return ADC value
+}
+
+float convert_temp(unsigned int adc_value) {
+    // Convert ADC value to temperature in Fahrenheit.
+    // Update this formula based on your sensor characteristics and calibration.
+    float temperature = (adc_value * 0.805) - 50;  // Example conversion
+    return temperature * 1.8 + 32;  // Convert Celsius to Fahrenheit
+}
+
+float read_temperature() {
+    unsigned int adc_value = read_adc(TEMP_SENSOR);
+    return convert_temp(adc_value);
+}
+//TODO check and see if 10 bit, I think it might be 8 bit but this is what forums say
+float read_set_point_from_potentiometer(unsigned char channel) {
+    unsigned int adc_value = read_adc(channel);
+    // Scale the potentiometer value to the range 55-85
+    return 55.0 + ((float)adc_value / 1023.0) * 30.0; // Assuming a 10-bit ADC
+}
+
+void update_display(float temperature, float set_point) {
+    char temp_str[16], setpoint_str[16];
+    sprintf(temp_str, "Temp: %.2f F", temperature);
+    sprintf(setpoint_str, "SetPt: %.2f F", set_point);
+    lcd_clear();
+    lcd_write_string(temp_str, 0, 0);
+    lcd_write_string(setpoint_str, 1, 0);
+}
+
+void control_leds(float temperature, float set_point) {
+    // Here, we're assuming LEDs are connected to general-purpose I/O pins on Port 3.
+    if (temperature <= set_point) {
+        P3 |= 0x01;  // Turn LED on (set the bit to 1)
+    } else {
+        P3 &= ~0x01; // Turn LED off (clear the bit)
+    }
+}
+
+void main() {
+    float temperature, set_point_0, set_point_1;  // set_point_1 for future use
+
+    init_device();  // Initialize the device
+    init_adc();     // Initialize ADC for reading temperature and potentiometers
+
+    while (1) {
+        temperature = read_temperature();  // Read temperature from the internal sensor
+        set_point_0 = read_set
+
+
+void main() {
+    float temperature, set_point;
+
+    init_device();  // Initialize the device settings
+    init_adc();     // Initialize the ADC for temperature and potentiometer readings
+
+       while (1) {
+        temperature = read_temperature();  // Read temperature from the internal sensor.
+        set_point_0 = read_set_point_from_potentiometer(POTENTIOMETER_CHANNEL_0);  // Read the set point from the first potentiometer.
+        // set_point_1 = read_set_point_from_potentiometer(POTENTIOMETER_CHANNEL_1);  // Future use: Read from second potentiometer.
+
+        update_display(temperature, set_point_0);  // Update the LCD with the current temperature and set point.
+        control_leds(temperature, set_point_0);    // Control the LEDs based on the temperature reading.
+
+        // Implement your delay here; for a simple loop delay use:
+        for (int delay = 0; delay < 50000; delay++) {
+            _nop_();  // No operation, just wasting time for delay.
+        }
+    }
+}

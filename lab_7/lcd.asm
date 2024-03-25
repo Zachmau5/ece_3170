@@ -58,7 +58,9 @@ wdat1:	movx	a,@r0		; r0 has no relevance here
 ;
 init_lcd:
 	mov	p4,#not LCD_RESET
+	;maybe change next line to #0B4h
 	mov	emi0cf,#00101001b        ; B5: P4-7, B4: multiplexed, B3-2: split bank, 01 2 sysclocks for ALE high and low
+	;maybe change this to #7
 	mov	emi0tc,#01001100b       ; pulse width 4 sysclock cycles DONE
 	mov	p74out,#0FFH    ; push-pull
 	orl     p4,#LCD_RESET   ; assert then deassert reset
@@ -114,7 +116,7 @@ byte_loop:
 
 blank_screen:
 	mov	dptr,#0
-	mov	a,#1
+	mov	a,#1 ; actually whipes screen needs to be 0.
 blank_loop:
 	rr A
 	movx	@dptr,a
