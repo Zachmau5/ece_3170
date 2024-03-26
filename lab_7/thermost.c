@@ -1,21 +1,18 @@
 #include <C8051F020.h>
 #include <lcd.h>
-
 // Include standard I/O for sprintf
 #include <stdio.h>
-
 // Define ADC channels
 #define TEMP_SENSOR 0x0F  // ADC channel for the internal temperature sensor
-#define POTENTIOMETER_CHANNEL_0 0x00;  // ADC channel for the first potentiometer (AIN0.0)
-#define POTENTIOMETER_CHANNEL_1 0x01;  // ADC channel for the second potentiometer (AIN0.1), for future use
-#define _nop_() _asm nop _endasm;
+#define POTENTIOMETER_CHANNEL_0 0x00  // ADC channel for the first potentiometer (AIN0.0)
+//#define POTENTIOMETER_CHANNEL_1 0x01  // ADC channel for the second potentiometer (AIN0.1), for future use
+//#define _nop_() _asm nop _endasm
 
 // Define strings in the external memory space
-//#__xdata __at(0x8100) char temperatureStr[32] // Reserve space for temperature string
-//#__xdata __at(0x8120) char setpointStr[32]    // Reserve space for setpoint string
-__xdata char temperatureStr[32]; // Correct usage
-__xdata char setpointStr[32];    // Correct usage
-
+//ubyte xdata __at(0xF000) char temperatureStr[32]
+//ubyte xdata __at(0xF000) char setpointStr[32]
+xdata char temperatureStr[32]; // Correct usage
+xdata char setpointStr[32];    // Correct usage
 void init_device() {
     WDTCN = 0xDE;  // Disable watchdog timer
     WDTCN = 0xAD;
@@ -48,6 +45,15 @@ unsigned int read_adc(unsigned char channel) {
     ADC0CN |= 0x10;               // Start conversion
     while (!(ADC0CN & 0x20));     // Wait for conversion to complete
     return (ADC0L | (ADC0H << 8)); // Return ADC value
+}
+void disp_char(unsigned char row, unsigned char col, char ch) {
+    int i, j, k;
+    i = 128 * row + col;  // Calculate the starting index in the 'screen' array.
+    j = (ch - 0x20) * 5;  // Calculate the starting index in the 'font' data.
+
+    for (k = 0; k < 5; k++) {  // Typically, character fonts are 5 columns wide.
+        screen[i + k] |= font[j + k];  // Combine the existing screen data with the font bitmap.
+    }
 }
 
 float convert_temp(unsigned int adc_value) {
@@ -87,22 +93,27 @@ void control_leds(float temperature, float set_point) {
 }
 
 void main() {
-    float temperature, set_point_0; //set_point_1;  // set_point_1 for breakout
+    //volatile unsigned int delay;  // Declare 'delay' outside of the for loop
+    //init_device();  // Initialize the device
+    init_lcd();     // Initialize LCD for reading temperature and potentiometers
+for ( ; ; )
+   {
+      // wait for data to arrive
+      if ( !RI0 ) continue;
+      // clear the receiver flag & echo the data
+      RI0 = 0;
+      SBUF0 = SBUF0;
+	  
 
-    init_device();  // Initialize the device
-    init_adc();     // Initialize ADC for reading temperature and potentiometers
-
-       while (1) {
-        temperature = read_temperature();  // Read temperature from the internal sensor.
-        set_point_0 = read_set_point_from_potentiometer(POTENTIOMETER_CHANNEL_0);  // Read the set point from the first potentiometer.
-        // set_point_1 = read_set_point_from_potentiometer(POTENTIOMETER_CHANNEL_1);  // Future use: Read from second potentiometer.
-
-        update_display(temperature, set_point_0);  // Update the LCD with the current temperature and set point.
-        control_leds(temperature, set_point_0);    // Control the LEDs based on the temperature reading.
-		
-        // Implement your delay here; for a simple loop delay use:
-        //for (delay = 0; delay < 50000; delay++) {
-        //    _nop_();  // No operation, just wasting time for delay.
-        //}
-    }
+   }
+    //while (1) {
+      //  blank_screen();    // Clear the screen
+        
+      //  lcd_write_string("Hello,", 0, 0);    // Write "Hello," at the first line
+      //  lcd_write_string("World!", 1, 0);    // Write "World!" at the second line
+       // blank_screen();    // Clear the screen again for the next message
+        
+       // lcd_write_string("Testing", 0, 0);   // Write "Testing" at the first line
+       // lcd_write_string("123", 1, 0);       // Write "123" at the second line
 }
+
