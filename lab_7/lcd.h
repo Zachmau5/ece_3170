@@ -1,4 +1,4 @@
-//
+
 // LCD Interface
 //
 // This module initializes the 64x128 LCD module, declares a shadow memory
@@ -10,8 +10,10 @@
 // It sets up LCD hardware, blanks the shadow memory then displays it on
 // the screen.
 //
-void init_lcd(void);
 
+void init_lcd(void);
+void init_device(void);
+void init_adc(void);
 //
 // Copy shadow memory to LCD screen.
 //
