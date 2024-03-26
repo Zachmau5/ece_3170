@@ -6,11 +6,15 @@
 
 // Define ADC channels
 #define TEMP_SENSOR 0x0F  // ADC channel for the internal temperature sensor
-#define POTENTIOMETER_CHANNEL_0 0x00  // ADC channel for the first potentiometer (AIN0.0)
-#define POTENTIOMETER_CHANNEL_1 0x01  // ADC channel for the second potentiometer (AIN0.1), for future use
+#define POTENTIOMETER_CHANNEL_0 0x00;  // ADC channel for the first potentiometer (AIN0.0)
+#define POTENTIOMETER_CHANNEL_1 0x01;  // ADC channel for the second potentiometer (AIN0.1), for future use
+#define _nop_() _asm nop _endasm;
+
 // Define strings in the external memory space
-__xdata __at(0x2100) char temperatureStr[32]; // Reserve space for temperature string
-__xdata __at(0x2120) char setpointStr[32];    // Reserve space for setpoint string
+//#__xdata __at(0x8100) char temperatureStr[32] // Reserve space for temperature string
+//#__xdata __at(0x8120) char setpointStr[32]    // Reserve space for setpoint string
+__xdata char temperatureStr[32]; // Correct usage
+__xdata char setpointStr[32];    // Correct usage
 
 void init_device() {
     WDTCN = 0xDE;  // Disable watchdog timer
@@ -40,7 +44,7 @@ void init_adc() {
 
 unsigned int read_adc(unsigned char channel) {
     AMX0SL = channel;             // Select ADC input channel
-    ADC0CN &= ~0x20;              // Clear the “conversion completed” flag
+    ADC0CN &= ~0x20;              // Clear the flag
     ADC0CN |= 0x10;               // Start conversion
     while (!(ADC0CN & 0x20));     // Wait for conversion to complete
     return (ADC0L | (ADC0H << 8)); // Return ADC value
@@ -68,7 +72,7 @@ void update_display(float temperature, float set_point) {
     char temp_str[16], setpoint_str[16];
     sprintf(temp_str, "Temp: %.2f F", temperature);
     sprintf(setpoint_str, "SetPt: %.2f F", set_point);
-    lcd_clear();
+    blank_screen();
     lcd_write_string(temp_str, 0, 0);
     lcd_write_string(setpoint_str, 1, 0);
 }
@@ -83,7 +87,7 @@ void control_leds(float temperature, float set_point) {
 }
 
 void main() {
-    float temperature, set_point_0, set_point_1;  // set_point_1 for breakout
+    float temperature, set_point_0; //set_point_1;  // set_point_1 for breakout
 
     init_device();  // Initialize the device
     init_adc();     // Initialize ADC for reading temperature and potentiometers
@@ -95,10 +99,10 @@ void main() {
 
         update_display(temperature, set_point_0);  // Update the LCD with the current temperature and set point.
         control_leds(temperature, set_point_0);    // Control the LEDs based on the temperature reading.
-
+		
         // Implement your delay here; for a simple loop delay use:
-        for (int delay = 0; delay < 50000; delay++) {
-            _nop_();  // No operation, just wasting time for delay.
-        }
+        //for (delay = 0; delay < 50000; delay++) {
+        //    _nop_();  // No operation, just wasting time for delay.
+        //}
     }
 }
