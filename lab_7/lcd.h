@@ -10,7 +10,7 @@
 // It sets up LCD hardware, blanks the shadow memory then displays it on
 // the screen.
 //
-
+extern xdata unsigned char screen[];
 void init_lcd(void);
 void init_device(void);
 void init_adc(void);
@@ -18,7 +18,8 @@ void init_adc(void);
 // Copy shadow memory to LCD screen.
 //
 void refresh_screen(void);
-
+void disp_char(unsigned char row, unsigned char col, char ch);
+extern code char font[];
 //
 // Clear the shadow memory.
 //
@@ -30,7 +31,7 @@ void lcd_write_string(char *str, unsigned char line, unsigned char row);
 // screen[1023] is lower right. Least significant bit of each byte is on the
 // top pixel row of its page.
 //
-extern xdata char screen[];
+//extern xdata char screen[];
 
 //
 // Handy 5x7 font that will come in handy in later labs. Always put at least
