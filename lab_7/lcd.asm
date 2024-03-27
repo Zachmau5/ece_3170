@@ -4,9 +4,9 @@ public init_lcd, refresh_screen, blank_screen, screen, font5x8;
 	rseg ?PR?lcd
 
 $include (c8051f020.inc)
-LCD_CMD   equ 8000H ; Set this to the address of the command register
-LCD_DAT   equ 8F00H ; Set this to the address of the data register
-LCD_RESET equ 10H ; Mask that selects the reset line on P4 (e.g. for P4.4 use 10H)
+LCD_CMD   equ 8000h ; Set this to the address of the command register
+LCD_DAT   equ 8F00h ; Set this to the address of the data register
+LCD_RESET equ 10h ; Mask that selects the reset line on P4 (e.g. for P4.4 use 10H)
 
 ;
 ; subroutines wcom and w_com_a
@@ -56,12 +56,13 @@ wdat1:	movx	a,@r0		; r0 has no relevance here
 ;   outputs: none
 ;   destroys: r0, r2, r3, dptr
 ;
+
 init_lcd:
 	mov	p4,#not LCD_RESET
-	mov	emi0cf,#00101001b        ; B5: P4-7, B4: multiplexed, B3-2: split bank, 01 2 sysclocks for ALE high and low
-	mov	emi0tc,#01001100b       ; pulse width 4 sysclock cycles DONE
+	mov	emi0cf,#00101011b       ; B5: P4-7, B4: multiplexed, B3-2: split bank
+	mov	emi0tc,#01001101b       ; pulse width 4 sysclock cycles
 	mov	p74out,#0FFH    ; push-pull
-	orl     p4,#LCD_RESET   ; assert then deassert reset
+	orl  p4,#LCD_RESET   ; assert then deassert reset
 
 	mov	R0,#02FH	; Boost on, voltage Reg and follower on
 	call	wcom
@@ -93,7 +94,7 @@ init_lcd:
 ; destroys: r0, r2, r3, dptr, EMI0CN
 ;
 refresh_screen:
-        mov	dptr,#0		; start of 1k block of memory
+  mov	dptr,#0		; start of 1k block of memory
 	mov	r2,#0B0H	; command to set page number to 0
 page_loop:
 	mov	a,r2		; set page number n, n = 0, 1, 2...7
@@ -116,7 +117,6 @@ blank_screen:
 	mov	dptr,#0
 	mov	a,#0
 blank_loop:
-	rr A
 	movx	@dptr,a
 	inc	dptr
 	mov	b,dph
@@ -219,7 +219,7 @@ font5x8:
   db  000H, 000H, 077H, 000H, 000H ; |
   db  000H, 041H, 041H, 03EH, 008H ; }
   db  002H, 001H, 002H, 001H, 000H ; ~
-  db  006H, 009H, 009H, 006H, 000H ; °
+  db  006H, 009H, 009H, 006H, 000H ; �
 
 	xseg
 screen:	ds 1024
