@@ -1,3 +1,15 @@
+;Project: Lab 7, Thermostat
+;Team: Andrew Coffel and Zachary Hallett
+;Description:
+;       The student should be able to write and test a program that reads
+;       an A/D converter, scales the data as appropriate and displays it on
+;       the LCD, then uses that data to make control decisions.
+;
+;VER		DATE				Description
+;
+; 0.0 -	3/25/2024 	-	initial project based off of Lab 6
+; 1.0 - 2/27/2024 	-	Project Submit
+
 #include <C8051F020.h>
 #include "lcd.h"
 
