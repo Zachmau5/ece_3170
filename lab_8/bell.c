@@ -1,11 +1,11 @@
 #include <C8051F020.h>
 #include <stdbool.h>
-#include "bell.h"
+//#include "bell.h"
 
 code unsigned char sine[] = { 176, 217, 244, 254, 244, 217, 176, 128, 80, 39, 12, 2, 12, 39, 80, 128 };
 
 unsigned char phase = sizeof(sine)-1;	// current point in sine to output
-
+unsigned char mybyte=0;
 unsigned int duration = 0;		// number of cycles left to output
 unsigned int delay=0;
 sbit BUTTON_1 = P2^7;
@@ -76,23 +76,17 @@ void main(void)
 	DAC0CN = 0x9C; 	// update on timer 2, left justified
 	IE = 0xA0;	// enable timer 2 only
 
- isReady = true; // Initially, the system is ready to process button presses.
+//isReady = true; // Initially, the system is ready to process button presses.
     while (1)
     {
-        // Check for BUTTON_1 press and release cycle
-        if (BUTTON_1)
-        {
-            while (BUTTON_1); // Wait for BUTTON_1 to be released
-            delay_ms(20); // Debounce delay after release
-            button_1_tone(); // Process button 1 action
-            delay_ms(20); // Short delay after processing to stabilize system state
-        	
+	while (!BUTTON_1) { // Wait for BUTTON_1 to be released
+				//mybyte = P2;
+            	delay_ms(20); // Debounce delay after release
+            	button_1_tone(); // Process button 1 action
+            	delay_ms(20); // Short delay after processing to stabilize system state	
 		}
 
-        // Check for BUTTON_2 press and release cycle
-        if (BUTTON_2)
-        {
-            while (BUTTON_2); // Wait for BUTTON_2 to be released
+     while (!BUTTON_2) { // Wait for BUTTON_2 to be released
             delay_ms(20); // Debounce delay after release
             button_2_tone(); // Process button 2 action
             delay_ms(20); // Short delay after processing to stabilize system state
