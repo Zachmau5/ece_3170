@@ -21,7 +21,7 @@ void timer2(void) interrupt 5 {
 
     // Apply volume to the sine wave output, ensure it doesn't underflow
     adjustedVolume = (sine[phase] * volume) >> 8;
-    DAC0H = adjustedVolume > 255 ? 255 : adjustedVolume;
+    DAC0H = adjustedVolume > 200 ? 200 : adjustedVolume;
 
     if (phase < sizeof(sine)-1) {
         phase++;
@@ -44,7 +44,7 @@ void timer2(void) interrupt 5 {
     }
 }
 void resetDecayVariables() {
-    volume = 255;
+    volume = 200;
     decayCounter = 0;
 	phase=0;
 }
@@ -52,50 +52,104 @@ void resetDecayVariables() {
 void button_1_tone(void) {
 
 	resetDecayVariables();	
-    RCAP2H=-1765 >> 8;
-	RCAP2L = -1765; // Set up for 800Hz for BUTTON_1
+    RCAP2H=-1767 >> 8;
+	RCAP2L = -1767; // Set up for note for BUTTON_1
 	duration = 250; // Adjusted duration for the first tone
     while (duration) {}; // Wait for the duration to elapse
 
 	resetDecayVariables();	
-    RCAP2H=-1570 >> 8;
-	RCAP2L = -1570; // Set up for 800Hz for BUTTON_1
+    RCAP2H=-1574 >> 8;
+	RCAP2L = -1574; // Set up for note for BUTTON_1
 	duration = 150; // Adjusted duration for the first tone
     while (duration) {}; // Wait for the duration to elapse
 
 	resetDecayVariables();	
-    RCAP2H=-1980 >> 8;
-	RCAP2L = -1980; // Set up for 800Hz for BUTTON_1
+    RCAP2H=-1983 >> 8;
+	RCAP2L = -1983; // Set up for note for BUTTON_1
 	duration = 250; // Adjusted duration for the first tone
     while (duration) {}; // Wait for the duration to elapse
 	
 	resetDecayVariables();
-	RCAP2H=-1765 >> 8;
-	RCAP2L = -1765; // Set up for 800Hz for BUTTON_1
-    duration = 500; // Adjust duration for the second tone
+	RCAP2H=-1767 >> 8;
+	RCAP2L = -1767; // Set up for note for BUTTON_1
+    duration = 1000; // Adjust duration for the second tone
     //RCAP2L = -181; // Set up for 635Hz for BUTTON_1
     while (duration) {}; // Wait for the duration to elapse
 	
+	resetDecayVariables();	
+    RCAP2H=-1486 >> 8;
+	RCAP2L = -1486; // Set up for note for BUTTON_1
+	duration = 250; // Adjusted duration for the first tone
+    while (duration) {}; // Wait for the duration to elapse
+
+	resetDecayVariables();	
+    RCAP2H=-1574 >> 8;
+	RCAP2L = -1570; // Set up for note for BUTTON_1
+	duration = 150; // Adjusted duration for the first tone
+    while (duration) {}; // Wait for the duration to elapse
+
+	resetDecayVariables();	
+    RCAP2H=-1983 >> 8;
+	RCAP2L = -1983; // Set up for note for BUTTON_1
+	duration = 250; // Adjusted duration for the first tone
+    while (duration) {}; // Wait for the duration to elapse
+	
+	resetDecayVariables();
+	RCAP2H=-1767 >> 8;
+	RCAP2L = -1767; // Set up for note for BUTTON_1
+    duration = 800; // Adjust duration for the second tone
+    while (duration) {}; // Wait for the duration to elapse
+
 	
 }
 
 void button_2_tone(void)    {
- 	resetDecayVariables();
-	RCAP2L = -181; // set up for 635Hz first for BUTTON_2
-    duration = 635; // one second
-    while (duration); // Wait for the duration to elapse
 
 	resetDecayVariables();
-    RCAP2L = -144; // then set up for 800Hz for BUTTON_2
-    duration = 600; // one second
-    while (duration); // Wait for the duration to elapse
+	RCAP2H = -1763 >> 8;
+	RCAP2L = -1763; // Set up for approximately 659Hz for note C
+	duration = 1000; // Adjusted duration for the first tone
+	while (duration) {}; // Wait for the duration to elapse
+
+	resetDecayVariables();
+	RCAP2H = -1868 >> 8;
+	RCAP2L = -1868; // Set up for approximately 987Hz for note B
+	duration = 250; // Adjusted duration for the second tone
+	while (duration) {}; // Wait for the duration to elapse
+
+	resetDecayVariables();
+	RCAP2H = -1763 >> 8;
+	RCAP2L = -1763; // Set up for approximately 659Hz for note C
+	duration = 250; // Adjusted duration for the third tone
+	while (duration) {}; // Wait for the duration to elapse
+
+	resetDecayVariables();
+	RCAP2H = -1571 >> 8;
+	RCAP2L = -1571; // Set up for approximately 740Hz for note D
+	duration = 500; // Adjusted duration for the fourth tone
+	while (duration) {}; // Wait for the duration to elapse
+
+	resetDecayVariables();
+	RCAP2H = -2094 >> 8;
+	RCAP2L = -2094; // Set up for approximately 987Hz for note A
+	duration = 750; // Adjusted duration for the fifth tone
+	while (duration) {}; // Wait for the duration to elapse
+
+	resetDecayVariables();
+	RCAP2H = -2359 >> 8;
+	RCAP2L = -2359; // Set up for approximately 831Hz for note G
+	duration = 750; // Adjusted duration for the sixth tone
+	while (duration) {}; // Wait for the duration to elapse
+
+	
+
 
 }
 
 void delay_ms(unsigned int milliseconds) {
     unsigned int i, j;
     for (i = 0; i < milliseconds; i++)
-        for (j = 0; j < 120; j++) // This loop count needs calibration
+        for (j = 0; j < 140; j++) // This loop count needs calibration
             ; // Do nothing, just wait
 }
 
@@ -121,16 +175,37 @@ void main(void)
 
     while (1) {
         if (!BUTTON_1) { // If BUTTON_1 is pressed
-			delay_ms(20); // Debounce delay
+			delay_ms(30); // Debounce delay
             while (!BUTTON_1); // Wait for BUTTON_1 to be released
             button_1_tone(); // Generate tone after release
-            //delay_ms(20); // Debounce delay after processing
-			resetDecayVariables();
+;
         }
      while (!BUTTON_2) { // Wait for BUTTON_2 to be released        
-			delay_ms(20); // Debounce delay after release
+			delay_ms(30); // Debounce delay after release
             button_2_tone(); // Process button 2 action
-            delay_ms(20); // Short delay after processing to stabilize system state
+
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
