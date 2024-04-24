@@ -896,63 +896,66 @@ void drawInfoPanel() {
 }
 
 
+// Function: gameOver
+// Description: Handles the end of the game by displaying a "GAME OVER" message, playing a sound sequence, and effectively halting the game.
 void gameOver() {
-	health=health-1;
-	blank_screen();		//gtg
-	drawBorders();		//gtg
-	drawInfoPanel();
-	 row = 5;
-	 col = 38;
+    health = health - 1; // Decrement the health
+    blank_screen();      // Clear the screen for fresh display
+    drawBorders();       // Draw the game borders again
+    drawInfoPanel();     // Redraw the info panel to update scores and health
 
-    // Display "P1" and P1's score
+    // Set the text display position for "GAME OVER"
+    unsigned int row = 5;
+    unsigned int col = 38;
+
+    // Display "GAME"
     disp_char(row, col, 'G');
     disp_char(row, col + 6, 'A');
-	disp_char(row, col + 12, 'M');
-	disp_char(row, col + 18, 'E');
-	row += LINE_HEIGHT;
-	disp_char(row, col, 'O');
+    disp_char(row, col + 12, 'M');
+    disp_char(row, col + 18, 'E');
+    row += LINE_HEIGHT;
+
+    // Display "OVER"
+    disp_char(row, col, 'O');
     disp_char(row, col + 6, 'V');
-	disp_char(row, col + 12, 'E');
-	disp_char(row, col + 18, 'R');
+    disp_char(row, col + 12, 'E');
+    disp_char(row, col + 18, 'R');
 
-	refresh_screen();
+    refresh_screen(); // Refresh the display to show the changes
 
-	delay(100);
+    // Short delay before playing sound
+    delay(100);
 
-	T4CON = T4CON^0x04;
-	duration = 250;
-	RCAP4H = -3533 >> 8;   // D note
-	RCAP4L = -3533;
-	duration = 250; // Adjusted duration for the first tone
+    // Sound sequence configuration
+    T4CON = T4CON^0x04; // Toggle Timer 4 control register for sound
+    RCAP4H = -3533 >> 8; // High byte for timer 4 capture register (D note)
+    RCAP4L = -3533;      // Low byte for timer 4 capture register
+    duration = 250;      // Set duration of the sound
 
+    // Delay for half a second
+    delay(500);
 
-	delay(500);
-	duration = 250;
-	T4CON = T4CON^0x04;
-	RCAP4H = -4743 >> 8;   // D note
-	RCAP4L = -4743;
-	duration = 250;
+    // Play second sound
+    T4CON = T4CON^0x04;
+    RCAP4H = -4743 >> 8; // High byte for timer 4 capture register (D note)
+    RCAP4L = -4743;      // Low byte for timer 4 capture register
+    duration = 250;
 
+    // Additional delay
+    delay(500);
 
-	delay(500);
+    // Continue sound
+    T4CON = T4CON^0x04;
+    duration = 500; // Extend the duration for the last tone
 
+    // Final delay
+    delay(100);
 
-	T4CON = T4CON^0x04;
-	duration = 250;
-	RCAP4H = -4743 >> 8;   // D note
-	RCAP4L = -4743;
-	duration = 500;
-	 // Adjusted duration for the first tone
-
-
-	delay(100);
-
-
-	for(;;) {
-
-	}
+    // Infinite loop to halt gameplay
+    for(;;) {
+        // This loop will continue indefinitely, stopping the game
+    }
 }
-
 
 void updateBall() {
     ball_x += x_vel;
