@@ -636,50 +636,57 @@ void repopulateBricks() {
 }
 
 
+// Function: hitBrick
+// Description: Checks for collisions between the ball and the bricks. If a collision is detected,
+//              the brick is deactivated, the ball's velocity is reversed, the score is updated,
+//              and sound effects are triggered. Additionally, it checks if all bricks have been cleared
+//              to possibly repopulate the game area and reset the game state.
 void hitBrick() {
+    // Determine which brick array to use based on the current player
     char (*currentBricks)[16] = (currentPlayer == 1) ? bricksPlayer1 : bricksPlayer2;
-    bool allCleared = false;
 
-    // Calculate the index of the brick based on ball's position
-    int x_index = (ball_x - 3) / 6; // Calculate column index based on ball's x position
-    int y_index = (ball_y - 15) / 5; // Calculate row index based on ball's y position
+    // Calculate the brick index from the ball's position
+    int x_index = (ball_x - 3) / 6; // Horizontal index of the brick
+    int y_index = (ball_y - 15) / 5; // Vertical index of the brick
 
-
-
-
-    // Check if the indices are within the valid range of the brick array
+    // Ensure the calculated indices are within the valid range
     if (x_index >= 0 && x_index < 16 && y_index >= 0 && y_index < 4) {
-        if (currentBricks[y_index][x_index] == 1) {  // Brick is active
-            currentBricks[y_index][x_index] = 0;  // Deactivate the brick
-            y_vel = -y_vel;  // Reverse the ball's vertical velocity
-            // Assume currentPlayer is either 1 or 2, adjust index for zero-based array access
-			update_score(currentPlayer - 1);
+        // Check if the brick at the calculated index is active
+        if (currentBricks[y_index][x_index] == 1) {
+            // Deactivate the hit brick
+            currentBricks[y_index][x_index] = 0;
 
-			//scores[currentPlayer-1] += 1;  // Increase score for the current player
+            // Reverse the ball's vertical velocity to simulate a bounce
+            y_vel = -y_vel;
 
-            // Sound effect
-            RCAP4H = -4321 >> 8;
+            // Update the score for the current player
+            update_score(currentPlayer - 1); // Assume a function update_score exists to handle score updates
+
+            // Trigger sound effect for hitting a brick
+            RCAP4H = -4321 >> 8;  // Setup timer value for sound frequency
             RCAP4L = -4321;
-            duration = 25;
-            T4CON = T4CON^0x04;
+            duration = 25;  // Set the duration for the sound
+            T4CON = T4CON^0x04;  // Toggle the sound timer to start/stop the sound
 
-
-
-            allCleared = areAllBricksCleared(currentBricks);
+            // Check if all bricks have been cleared
+            bool allCleared = areAllBricksCleared(currentBricks);
             if (allCleared) {
-                repopulateBricks(currentBricks); // Repopulate bricks if all were cleared
-                ball_x = starting_position_x;
-                ball_y = starting_position_y;
-                pot_avg = SCREEN_WIDTH / 2;  // Reset paddle to the middle
-                delay(2000);  // Pause for repositioning without immediate play
-                x_vel = 0;
-                y_vel = 1;  // Start moving the ball down again
-                //speedIncreased = false;  // Reset speed boost flag for new game
+                // Repopulate the bricks and reset the game state if all bricks are cleared
+                repopulateBricks(currentBricks);
+                ball_x = starting_position_x;  // Reset the ball to the starting x position
+                ball_y = starting_position_y;  // Reset the ball to the starting y position
+                pot_avg = SCREEN_WIDTH / 2;  // Center the paddle
+                delay(2000);  // Pause before resuming play
+                x_vel = 0;  // Reset horizontal velocity
+                y_vel = 1;  // Set initial downward velocity
             }
-            return;  // Exit after handling the collision
+
+            // Exit function after handling collision to avoid further processing
+            return;
         }
     }
 }
+
 
 
 void pregame() {
