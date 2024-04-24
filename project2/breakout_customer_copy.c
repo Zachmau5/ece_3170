@@ -600,24 +600,39 @@ void checkWallCollisions() {
     }
 }
 
-bool areAllBricksCleared(char bricks[4][16]) {
-    for (i = 0; i < 4; i++) {
-        for (j = 0; j < 16; j++) {
-            if (bricks[i][j] == 1) {
-                return false; // Found an active brick
+// Function: areAllBricksCleared
+// Description: Checks if all bricks for the current player have been cleared.
+// Parameters:
+//   currentPlayer - the current player's turn.
+// Returns:
+//   bool - true if all bricks are cleared, false otherwise.
+bool areAllBricksCleared() {
+    char (*currentBricks)[16] = (currentPlayer == 1) ? bricksPlayer1 : bricksPlayer2; // Choose the correct brick array based on currentPlayer
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 16; j++) {
+            if (currentBricks[i][j] == 1) {
+                return false; // Active brick found, return false
             }
         }
     }
-    return true; // No active bricks found
+    return true; // No active bricks found, return true
 }
 
-void repopulateBricks(char bricks[4][16]) {
-    for (i = 0; i < 4; i++) {
-        for (j = 0; j < 16; j++) {
-            bricks[i][j] = 1; // Reactivate all bricks
+
+// Function: repopulateBricks
+// Description: Resets all bricks to active for the current player.
+// Parameters:
+//   currentPlayer - the current player's turn.
+void repopulateBricks() {
+    char (*currentBricks)[16] = (currentPlayer == 1) ? bricksPlayer1 : bricksPlayer2; // Choose the correct brick array based on currentPlayer
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 16; j++) {
+            currentBricks[i][j] = 1; // Set each brick to active
         }
     }
-	speedIncreased = false;
+    speedIncreased = false; // Reset the speed increase flag upon repopulating bricks
 }
 
 
