@@ -957,82 +957,84 @@ void gameOver() {
     }
 }
 
+// Function: updateBall
+// Description: Updates the position of the ball based on its velocity, checks for collisions with the walls, bricks, and the paddle,
+// and handles the game logic when the ball hits these objects or when it misses the paddle.
 void updateBall() {
+    // Update ball position based on its velocity
     ball_x += x_vel;
     ball_y += y_vel;
 
+    // Define the boundaries within the screen
     left_bound = 2;
     right_bound = 98;
     top_bound = 9;
     bottom_bound = SCREEN_HEIGHT - 3;
 
-	// Check collisions with the walls
+    // Check for collisions with the walls
     checkWallCollisions();
 
-    // Check and handle collisions with bricks
+    // Check for collisions with bricks
     hitBrick();
 
-    // Check and handle collision with the paddle
+    // Check if the ball reaches the bottom of the screen (near the paddle)
     if (ball_y >= bottom_bound) {
-        if (!ballHitsPaddle()) {  // Check if it hits the paddle
-            lives[currentPlayer-1]--;  // Lose a life
+        if (!ballHitsPaddle()) {  // Check if the ball does not hit the paddle
+            lives[currentPlayer-1]--;  // Decrement life for the current player
 
-				T4CON = T4CON^0x04;
-				RCAP4H = -3533 >> 8;   // D note
-				RCAP4L = -3533;
-				duration = 50; // Adjusted duration for the first tone
+            // Play a sound indicating the ball missed the paddle
+            T4CON = T4CON^0x04;
+            RCAP4H = -3533 >> 8;  // D note, high byte
+            RCAP4L = -3533;       // D note, low byte
+            duration = 50;        // Duration for the sound
 
-				delay(25);
+            delay(25);  // Short delay before next sound
 
-				T4CON = T4CON^0x04;
-				RCAP4H = -6295 >> 8;   // D note
-				RCAP4L = -6295;
-				duration = 50;
+            // Play another sound for feedback
+            T4CON = T4CON^0x04;
+            RCAP4H = -6295 >> 8;  // Another D note, high byte
+            RCAP4L = -6295;       // Another D note, low byte
+            duration = 50;
 
-	   			//while (duration) {};
-				T4CON = T4CON^0x04;
-				switchPlayer();
-				//drawPaddle();
+            // Switch player if in two-player mode
+            switchPlayer();
 
-            	delay(2000);
+            delay(2000);  // Delay before restarting the action
 
-			if (lives[currentPlayer-1] > 0) {
-                // Reset the ball position or handle life loss without stopping the game
-                ball_y = 40;  // Reset to starting position
-                ball_x = 50;
-                resetPaddlePosition();
-				drawPaddle();
-				//drawBall();
-				//drawBall();
-				if(game_mode==1) {
-					while (but_1 != 0) {
-					 	blank_screen();		//gtg
-						drawBorders();		//gtg
-						drawInfoPanel();
-						parameter_check();
-						mid_game();
-						refresh_screen();
-    					}
-					delay(250);
-				}
-				else {
-					delay(2000);
-				}
+            if (lives[currentPlayer-1] > 0) {
+                // Reset ball position and game state if the player still has lives
+                ball_y = 40;  // Reset to a starting position vertically
+                ball_x = 50;  // Reset to a starting position horizontally
+                resetPaddlePosition();  // Reset the paddle position
+                drawPaddle();  // Redraw the paddle
 
-				x_vel = 0;
-				y_vel = 1;  // Start the ball moving down again
+                // Wait for player readiness in two-player mode
+                if(game_mode==1) {
+                    while (but_1 != 0) {
+                        blank_screen();  // Clear screen
+                        drawBorders();   // Redraw borders
+                        drawInfoPanel(); // Redraw information panel
+                        mid_game();      // Show mid-game menu
+                        refresh_screen();  // Refresh the display
+                    }
+                    delay(250);  // Brief delay to handle button debounce
+                } else {
+                    delay(2000);  // Longer delay in single-player mode
+                }
 
+                x_vel = 0;  // Stop horizontal movement
+                y_vel = 1;  // Start the ball moving downward again
             } else {
-                // End the game if no lives left
+                // Call gameOver if no lives are left
                 gameOver();
             }
         } else {
-            y_vel = -y_vel;  // Continue the bounce if it hits the paddle
-            ball_y = bottom_bound - 1;
+            // If the ball hits the paddle, reverse its vertical direction
+            y_vel = -y_vel;
+            ball_y = bottom_bound - 1;  // Adjust ball position to just above the paddle
         }
     }
 }
-
 
 //---------------MAIN--------------------------------------------------------------------------------------------------//
 
