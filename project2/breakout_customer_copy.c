@@ -1038,49 +1038,52 @@ void updateBall() {
 
 //---------------MAIN--------------------------------------------------------------------------------------------------//
 
+//---------------MAIN--------------------------------------------------------------------------------------------------//
 
+// Function: main
+// Description: Initializes the system, displays pregame information, and handles the main game loop.
 int main() {
-	initDevice();
-	init_timer();
-	init_lcd();
-    init_adc();
-	while (but_2 != 0) {
-	 	blank_screen();		//gtg
-		drawBorders();		//gtg
-		drawInfoPanel();
-		parameter_check();
-		pregame();
+    initDevice();        // Initialize device settings and configurations
+    init_timer();        // Set up timers for game timing and events
+    init_lcd();          // Initialize LCD display for output
+    init_adc();          // Set up ADC for reading inputs (e.g., paddle position)
+
+    // Wait for the start button (but_2) to be pressed
+    while (but_2 != 0) {
+        blank_screen();  // Clear the screen for clean drawing
+        drawBorders();   // Draw game borders
+        drawInfoPanel(); // Display scores and other game info
+        parameter_check(); // Check and update game parameters based on settings (like dip switches)
+        pregame();       // Display pregame information prompting the player to start
 
         // Optionally, include a small delay to debounce the input or reduce CPU usage
-        //delay(10);  // Delay for 10 milliseconds
-		refresh_screen();
+        refresh_screen();  // Refresh the display to show updates
     }
-	delay(250);
+    delay(250);  // Short delay after button press to prevent bouncing effects or multiple reads
 
-    // The button has been pressed, proceed with game start
-    blank_screen();  // Clear the screen initially
+    // Main game loop starts after button press
+    blank_screen();  // Clear the screen before starting the game
 
     while (1) {
+        // Speed control based on whether speed has been increased
+        if(speedIncreased==0) {
+            delay(speed*2);  // Slower delay if speed not increased
+        } else {
+            delay(speed);  // Faster gameplay when speed is increased
+        }
 
-		if(speedIncreased==0)	{
-			delay(speed*2);
-		}	else {
-			delay(speed);
-			}
+        blank_screen();    // Clear the screen before each redraw
+        drawPaddle();      // Draw the paddle based on current position
+        drawBorders();     // Redraw game borders
+        drawInfoPanel();   // Update and display game info like scores
+        parameter_check(); // Recheck parameters in case of any change during gameplay
+        updateBall();      // Move the ball and handle interactions
+        drawBricks();      // Draw and update the status of bricks
 
+        drawBall(ball_x, ball_y);  // Draw the ball at its current position
 
-        blank_screen();		//gtg
-		drawPaddle();
-		drawBorders();		//gtg
-		drawInfoPanel();
-		parameter_check();	//gtg
-		updateBall();
-        drawBricks();		//partial compliance
-
-		drawBall(ball_x,ball_y);	//change arguments to variables
-
-
-        refresh_screen();
+        refresh_screen();  // Refresh the display to show all updates
     }
-    //return 0;
+    // Note: return 0; is commented out as most embedded systems will run indefinitely
 }
+
