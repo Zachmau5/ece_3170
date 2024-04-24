@@ -847,26 +847,30 @@ void mid_game() {
 }
 
 
+// Function: drawInfoPanel
+// Description: Displays the scores for Player 1, Player 2, the high score, and the current health of the active player.
+// It updates the screen with text and numeric values for each player's score, the high score, and visual representation of health using '#'.
 void drawInfoPanel() {
     unsigned int row = 0;
-    unsigned int col = INFO_START_COL;
-	int i;
-    // Display "P1" and P1's score
+    unsigned int col = INFO_START_COL; // Starting column for the info panel
+    int i; // Loop variable for displaying health icons
+
+    // Display "P1" and Player 1's score
     disp_char(row, col, 'P');
     disp_char(row, col + 6, '1');
     disp_char(row, col + 12, ':');
     row += LINE_HEIGHT;
-    disp_char(row, col, '0' + (scores[0] / 10) % 10);  // Tens
-    disp_char(row, col + 6, '0' + scores[0] % 10);  // Units
+    disp_char(row, col, '0' + (scores[0] / 10) % 10);  // Tens place of Player 1's score
+    disp_char(row, col + 6, '0' + scores[0] % 10);     // Units place of Player 1's score
     row += LINE_HEIGHT;
 
-    // Display "P2" and P2's score
+    // Display "P2" and Player 2's score
     disp_char(row, col, 'P');
     disp_char(row, col + 6, '2');
     disp_char(row, col + 12, ':');
     row += LINE_HEIGHT;
-    disp_char(row, col, '0' + (scores[1] / 10) % 10);  // Tens
-    disp_char(row, col + 6, '0' + scores[1] % 10);  // Units
+    disp_char(row, col, '0' + (scores[1] / 10) % 10);  // Tens place of Player 2's score
+    disp_char(row, col + 6, '0' + scores[1] % 10);     // Units place of Player 2's score
     row += LINE_HEIGHT;
 
     // Display "High Score" and the actual high score
@@ -874,22 +878,23 @@ void drawInfoPanel() {
     disp_char(row, col + 5, 'i');
     disp_char(row, col + 9, 'g');
     disp_char(row, col + 15, 'h');
-
     row += LINE_HEIGHT;
-    disp_char(row, col, '0' + (scores[2] / 10) % 10);  // Tens
-    disp_char(row, col + 6, '0' + scores[2] % 10);  // Units
-    row += LINE_HEIGHT;
-    // Display "Health" and icons
-    disp_char(row, col, 'H'); // Simplified display of "Health"
-    disp_char(row, col+6, 'P'); // Simplified display of "Health"
-    disp_char(row, col+12, ':'); // Simplified display of "Health"
+    disp_char(row, col, '0' + (scores[2] / 10) % 10);  // Tens place of the high score
+    disp_char(row, col + 6, '0' + scores[2] % 10);     // Units place of the high score
     row += LINE_HEIGHT;
 
-	for (i = 0; i < currentPlayer[lives-1]; i++) {
-        disp_char(row, col + i * 6, '#'); // Display one '#' for each life
+    // Display "Health" label and icons for the current player's remaining lives
+    disp_char(row, col, 'H');
+    disp_char(row, col + 6, 'P');
+    disp_char(row, col + 12, ':');
+    row += LINE_HEIGHT;
+    // Draw health icons ('#' for each remaining life)
+    for (i = 0; i < lives[currentPlayer-1]; i++) {
+        disp_char(row, col + i * 6, '#');
     }
     row += LINE_HEIGHT;
 }
+
 
 void gameOver() {
 	health=health-1;
