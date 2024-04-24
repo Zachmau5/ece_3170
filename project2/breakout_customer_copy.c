@@ -644,7 +644,7 @@ void repopulateBricks() {
 void hitBrick() {
     // Determine which brick array to use based on the current player
     char (*currentBricks)[16] = (currentPlayer == 1) ? bricksPlayer1 : bricksPlayer2;
-
+    bool allCleared = false;
     // Calculate the brick index from the ball's position
     int x_index = (ball_x - 3) / 6; // Horizontal index of the brick
     int y_index = (ball_y - 15) / 5; // Vertical index of the brick
